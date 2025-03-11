@@ -1,1 +1,3 @@
 recipeproject/recipeenv
+__pycache__/
+migrations/
