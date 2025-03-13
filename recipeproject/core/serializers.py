@@ -19,3 +19,18 @@ class RecipeSeralizer(serializers.ModelSerializer):
       class Meta:
             model = Recipe
             fields = ('title','description','instructions','prep_time','cook_time','servings','ingredients')
+            
+      def create(self, validated_data):
+            ingredients_data = validated_data.pop('ingredients', [])
+            
+            if isinstance(ingredients_data,dict) and 'all' in ingredients_data: # gelen data dict geliyor ama
+                  ingredients_data = ingredients_data['all'] # 'all' key olarak geldi. pop() dan dolayı sanırım.
+                  
+            recipe = Recipe.objects.create(**validated_data)
+            
+            for data in ingredients_data:
+                  ing_data = data.pop('ingredient')
+                  ingredient, _=Ingredient.objects.get_or_create(**ing_data)
+                  RecipeIngredient.objects.create(recipe=recipe, ingredient=ingredient, **data)
+                  
+            return recipe

@@ -34,7 +34,7 @@ class RecipeIngredient(models.Model):
       recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name="ingredients")  
       ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name="recipes")  
       amount = models.FloatField()  #kullanılan miktar
-      unit = models.CharField(max_length=50)  #ölçü birimi 
+      unit = models.CharField(max_length=50)  #ölçü birimi ### kaldırabilirim sonra. şuan kalsın.
 
       def __str__(self):
             return f"{self.amount} {self.unit} {self.ingredient.name} ({self.recipe.title})"
