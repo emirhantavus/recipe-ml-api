@@ -35,7 +35,9 @@ class RecipeDetailAPIView(APIView):
       
       def delete(self, request,id):
             recipe = get_object_or_404(Recipe,id=id)
-            r_id = recipe.id
+            recipe_id = recipe.id
             recipe.delete()
-            return Response({'message':f"Recipe id: {r_id} is deleted successfuly."},status=status.HTTP_204_NO_CONTENT)
+            return Response({'message':f"Recipe id: {recipe_id} has been deleted successfuly."},
+                            status=status.HTTP_204_NO_CONTENT
+                        )
             

@@ -46,4 +46,3 @@ class RecipeTest(APITestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(Recipe.objects.count(),1) # just in setUp, 1
             self.assertIn('title',response.data[0])
-                  
