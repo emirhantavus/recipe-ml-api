@@ -5,11 +5,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from .filters import RecipeFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 class RecipeListCreateAPIView(APIView):
+      filter_backends = [DjangoFilterBackend]
+      filterset_class = RecipeFilter
+      
       def get(self, request):
-            recipes = Recipe.objects.all()
-            serializer = RecipeSeralizer(recipes, many=True)
+            queryset = Recipe.objects.all()
+            filtered_queryset = RecipeFilter(request.GET, queryset=queryset)
+            if filtered_queryset.is_valid():
+                  queryset = filtered_queryset.qs
+            serializer = RecipeSeralizer(queryset, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
       
       def post(self, request):
