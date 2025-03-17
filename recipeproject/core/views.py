@@ -5,20 +5,48 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .filters import RecipeFilter
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination
 
+class RecipePagination(PageNumberPagination):
+      page_size = 10
+      page_size_query_param = 'page_size'
+      max_page_size = 100
+    
 class RecipeListCreateAPIView(APIView):
-      filter_backends = [DjangoFilterBackend]
-      filterset_class = RecipeFilter
-      
+
       def get(self, request):
             queryset = Recipe.objects.all()
-            filtered_queryset = RecipeFilter(request.GET, queryset=queryset)
-            if filtered_queryset.is_valid():
-                  queryset = filtered_queryset.qs
-            serializer = RecipeSeralizer(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            title = request.GET.get('title')
+            if title:
+                  queryset = queryset.filter(title__icontains=title)
+                  
+            prep_time = request.GET.get('prep_time')
+            if prep_time:
+                  queryset = queryset.filter(prep_time=prep_time)
+                  
+            prep_time_lte = request.GET.get('prep_time__lte')
+            if prep_time_lte:
+                  queryset = queryset.filter(prep_time__lte=prep_time_lte)
+                  
+            cook_time_gte = request.GET.get('cook_time__gte')
+            if cook_time_gte:
+                  queryset = queryset.filter(cook_time__gte=cook_time_gte)
+                  
+            ingredient_name = request.GET.get('ingredient')
+            if ingredient_name:
+                  queryset = queryset.filter(ingredients__ingredient__name__icontains=ingredient_name)
+                  
+            ordering = request.GET.get('ordering')
+            if ordering:
+                  ordering_fields = ordering.split(',')
+                  queryset = queryset.order_by(*ordering_fields)
+                  
+            paginator = RecipePagination()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+                  
+            serializer = RecipeSeralizer(paginated_queryset, many=True)
+            return paginator.get_paginated_response(serializer.data)
       
       def post(self, request):
             serializer = RecipeSeralizer(data=request.data)
