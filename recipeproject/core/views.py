@@ -15,7 +15,7 @@ class RecipePagination(PageNumberPagination):
 class RecipeListCreateAPIView(APIView):
 
       def get(self, request):
-            queryset = Recipe.objects.all()
+            queryset = Recipe.objects.all().order_by('id')
             
             title = request.GET.get('title')
             if title:
@@ -23,24 +23,39 @@ class RecipeListCreateAPIView(APIView):
                   
             prep_time = request.GET.get('prep_time')
             if prep_time:
-                  queryset = queryset.filter(prep_time=prep_time)
+                  if prep_time and prep_time.isdigit():
+                        queryset = queryset.filter(prep_time=int(prep_time))
+                  else:
+                        return Response({'error':'Invalid prep_time value.'}, status=status.HTTP_400_BAD_REQUEST)
                   
             prep_time_lte = request.GET.get('prep_time__lte')
             if prep_time_lte:
-                  queryset = queryset.filter(prep_time__lte=prep_time_lte)
+                  if prep_time_lte and prep_time_lte.isdigit():
+                        queryset = queryset.filter(prep_time__lte=int(prep_time_lte))
+                  else:
+                        return Response({'error':'Invalid prep_time value.'}, status=status.HTTP_400_BAD_REQUEST)
                   
             cook_time_gte = request.GET.get('cook_time__gte')
             if cook_time_gte:
-                  queryset = queryset.filter(cook_time__gte=cook_time_gte)
+                  if cook_time_gte and cook_time_gte.isdigit():
+                        queryset = queryset.filter(cook_time__gte=cook_time_gte)
+                  else:
+                        return Response({'error':'Invalid cook_time__gte value.'}, status=status.HTTP_400_BAD_REQUEST)
                   
             ingredient_name = request.GET.get('ingredient')
             if ingredient_name:
                   queryset = queryset.filter(ingredients__ingredient__name__icontains=ingredient_name)
-                  
+            
+            valid_ordering_fields = ['prep_time', 'cook_time', 'servings', 'title', 'created_at']
             ordering = request.GET.get('ordering')
             if ordering:
                   ordering_fields = ordering.split(',')
-                  queryset = queryset.order_by(*ordering_fields)
+                  valid_fields = [field for field in ordering_fields if field.lstrip('-') in valid_ordering_fields]
+                  
+                  if valid_fields:
+                        queryset = queryset.order_by(*valid_fields)
+                  else:
+                        return Response({'error':'Invalid fields..'},status=status.HTTP_400_BAD_REQUEST)
                   
             paginator = RecipePagination()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
