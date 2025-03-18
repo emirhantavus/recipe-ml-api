@@ -6,6 +6,7 @@ class CustomUserManager(BaseUserManager):
             if not email:
                 raise ValueError("Email address is required")
             email = self.normalize_email(email)
+            extra_fields.setdefault('is_active', True)
             user = self.model(email=email, **extra_fields)
             user.set_password(password)
             user.save(using=self._db)
@@ -14,17 +15,26 @@ class CustomUserManager(BaseUserManager):
       def create_superuser(self, email, password=None, **extra_fields):
             extra_fields.setdefault('is_staff', True)
             extra_fields.setdefault('is_superuser', True)
+            if extra_fields.get('is_staff') is not True:
+                  raise ValueError('Superuser must have is_staff=True.')
+            if extra_fields.get('is_superuser') is not True:
+                  raise ValueError('Superuser must have is_superuser=True.')
             return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
       email = models.EmailField(unique=True)
       
       is_active = models.BooleanField(default=True)
-      is_staff = models.BooleanField(default=False)   
-      USERNAME_FIELD = 'email'
-      REQUIRED_FIELDS = []    
+      is_staff = models.BooleanField(default=False)
       
-      objects = CustomUserManager() 
+      objects = CustomUserManager()
+         
+      USERNAME_FIELD = 'email'
+      REQUIRED_FIELDS = []
+      
+      def save(self, *args, **kwargs):
+            self.email = self.email.lower()
+            super().save(*args, **kwargs)
       
       def __str__(self):
-          return f"{self.email}"
+          return f"User: {self.email} | Active: {self.is_active}"
