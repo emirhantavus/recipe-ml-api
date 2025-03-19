@@ -1,9 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from django.contrib.auth import get_user_model
 from core.models import Recipe
-
-User = get_user_model()
 
 class CustomUserManager(BaseUserManager):
       def create_user(self, email, password=None, **extra_fields):
@@ -45,7 +42,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     
 
 class Profile(models.Model):
-      user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+      user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="profile")
       nickname = models.CharField(max_length=50, unique=True, blank=True, null=True)
       avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
       favorite_recipes = models.ManyToManyField(Recipe, blank=True, related_name="favorited_by")
