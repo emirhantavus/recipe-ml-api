@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny , IsAuthenticated
 from .serializers import RegisterSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -14,7 +15,7 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
       @classmethod
       def get_token(cls, user):
             token = super().get_token(user)
-            token['email'] = user.email # kalsın sonra bakılır.
+            token['user_id'] = user.id # kalsın sonra bakılır.
             return token
       
       
@@ -36,3 +37,17 @@ class LoginView(TokenObtainPairView):
                   'access':response.data['access'],
                   'refresh':response.data['refresh']
             },status=status.HTTP_200_OK)
+            
+class LogoutView(APIView):
+      permission_classes = [IsAuthenticated]
+      
+      def post(self, request):
+            try:
+                  refresh_token = request.data.get('refresh')
+                  if not refresh_token:
+                        return Response({'error':'Refresh token is required'},status=status.HTTP_400_BAD_REQUEST)
+                  token = RefreshToken(refresh_token)
+                  token.blacklist()
+                  return Response({'message':'Logout Successful'},status=status.HTTP_205_RESET_CONTENT)
+            except Exception as e:
+                  return Response({'error':'Invalid Token'},status=status.HTTP_400_BAD_REQUEST)      

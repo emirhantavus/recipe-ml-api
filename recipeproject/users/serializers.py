@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from .models import Profile
+from core.models import Recipe
 
 User = get_user_model()
 
@@ -23,3 +25,16 @@ class RegisterSerializer(serializers.ModelSerializer):
             user.set_password(validated_data['password'])
             user.save()
             return user
+      
+
+class RecipeSerializer(serializers.ModelSerializer):
+      class Meta:
+            model = Recipe
+            fields = ('id', 'title')
+
+class ProfileSerializer(serializers.ModelSerializer):
+      favorite_recipes = RecipeSerializer(many=True, read_only=True)
+
+      class Meta:
+            model = Profile
+            fields = ('nickname', 'avatar', 'favorite_recipes')
