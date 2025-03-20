@@ -4,17 +4,17 @@ from .models import Recipe , Ingredient, RecipeIngredient, IngredientAlternative
 class IngredientSerializer(serializers.ModelSerializer):
       class Meta:
             model = Ingredient
-            fields = ('name','unit')
+            fields = ('id','name',)
             
 class RecipeIngredientSerailizer(serializers.ModelSerializer):
-      ingredient = IngredientSerializer()
+      ingredient = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
       
       class Meta:
             model = RecipeIngredient
             fields = ('ingredient','amount','unit')
             
 class RecipeSeralizer(serializers.ModelSerializer):
-      ingredients = RecipeIngredientSerailizer(source='ingredients.all',many=True)
+      ingredients = RecipeIngredientSerailizer(many=True)
       
       class Meta:
             model = Recipe
@@ -29,8 +29,7 @@ class RecipeSeralizer(serializers.ModelSerializer):
             recipe = Recipe.objects.create(**validated_data)
             
             for data in ingredients_data:
-                  ing_data = data.pop('ingredient')
-                  ingredient, _=Ingredient.objects.get_or_create(**ing_data)
+                  ingredient = data.pop('ingredient')
                   RecipeIngredient.objects.create(recipe=recipe, ingredient=ingredient, **data)
                   
             return recipe
@@ -46,11 +45,10 @@ class RecipeSeralizer(serializers.ModelSerializer):
             instance.servings = validated_data.get('servings',instance.servings)
             instance.save()
             
-            instance.ingredients.all().delete()
+            instance.ingredients.clear()
             
             for data in ingredients_data:
-                  ing_data = data.pop('ingredient')
-                  ingredient, _ = Ingredient.objects.get_or_create(**ing_data)
-                  RecipeIngredient.objects.create(recipe=instance, ingredient=ingredient, amount=data['amount'])
+                  ingredient = data.pop('ingredient')
+                  RecipeIngredient.objects.create(recipe=instance, ingredient=ingredient, **data)
             
             return instance
