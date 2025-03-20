@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
+from django.db.models import Count
+from django.db import models
 
 class RecipePagination(PageNumberPagination):
       page_size = 10
@@ -92,3 +94,59 @@ class RecipeDetailAPIView(APIView):
                             status=status.HTTP_204_NO_CONTENT
                         )
             
+            
+class FindRecipesByIngredientsView(APIView):
+      def post(self, request):
+            user_ingredients = request.data.get('ingredients', [])
+            
+            if not user_ingredients:
+                  return Response({'error':'Please use at least one ingredient.'},status=status.HTTP_400_BAD_REQUEST)
+            
+            matching_recipes = Recipe.objects.annotate(
+                  matched_ingredients=Count("ingredients", filter=models.Q(ingredients__ingredient__name__in=user_ingredients))
+            ).filter(
+                  matched_ingredients=Count("ingredients")
+                  ) # malzemeleri tamamen eşleşenleri burdan çekeriz.
+            
+            if matching_recipes.exists():
+                  recipe_list = []
+                  for recipe in matching_recipes:
+                        recipe_list.append({
+                              "title": recipe.title,
+                              "description":recipe.description,
+                              "ingredients":list(recipe.ingredients.values_list("ingredient__name", flat=True))
+                        })
+            
+            all_recipes = Recipe.objects.all()
+            alternative_suggestions = []
+            
+            for recipe in all_recipes:
+                  recipe_ingredients = set(recipe.ingredients.values_list("ingredient__name",flat=True))
+                  missing_ingredients = recipe_ingredients - set(user_ingredients) #eksik malzemeleri belirliyoz.
+                  
+                  if len(missing_ingredients) <= 2 and len(missing_ingredients) > 0:
+                        #sonra değiştirebilirim burayı kalsın burası. 2 den az 0 dan büyükse suggest yaptıralım şuan.
+                        alternative_suggestions.append({
+                              "title":recipe.title,
+                              "description":recipe.description,
+                              "missing_ingredients":list(missing_ingredients)
+                        })
+            
+            return Response({
+                  "meessage":"there is exact matches." if recipe_list else "No exact matches found.",
+                  "recipes":recipe_list,
+                  "suggestions": alternative_suggestions
+            }, status=status.HTTP_200_OK)
+            
+class GetIngredientsView(APIView):
+      def get(self, request):
+            ingredients = Ingredient.objects.all()
+            serializer = IngredientSerializer(ingredients ,many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+      
+      def post(self,request):
+            serializer = IngredientSerializer(data=request.data)
+            if serializer.is_valid():
+                  serializer.save()
+                  return Response({'message':'Ingredient Created..'},status=status.HTTP_201_CREATED)
+            return Response({'error':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
