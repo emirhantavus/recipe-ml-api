@@ -98,18 +98,30 @@ class RecipeDetailAPIView(APIView):
 class FindRecipesByIngredientsView(APIView):
       def post(self, request):
             user_ingredients = request.data.get('ingredients', [])
+            recipe_title = request.data.get('title', None)
             
             if not user_ingredients:
                   return Response({'error':'Please use at least one ingredient.'},status=status.HTTP_400_BAD_REQUEST)
             
-            matching_recipes = Recipe.objects.annotate(
+            recipe_list = []
+            alternative_suggestions = []
+            
+            if recipe_title:
+                  try:
+                        recipes = Recipe.objects.filter(title__icontains=recipe_title)
+                  except Recipe.DoesNotExist:
+                        return Response({'error': f"No recipe found with {recipe_title}"},status=status.HTTP_404_NOT_FOUND)
+                  
+            else:
+                  recipes = Recipe.objects.all()
+            
+            matching_recipes = recipes.annotate(
                   matched_ingredients=Count("ingredients", filter=models.Q(ingredients__ingredient__name__in=user_ingredients))
             ).filter(
                   matched_ingredients=Count("ingredients")
                   ) # malzemeleri tamamen eşleşenleri burdan çekeriz.
             
             if matching_recipes.exists():
-                  recipe_list = []
                   for recipe in matching_recipes:
                         recipe_list.append({
                               "title": recipe.title,
@@ -117,19 +129,25 @@ class FindRecipesByIngredientsView(APIView):
                               "ingredients":list(recipe.ingredients.values_list("ingredient__name", flat=True))
                         })
             
-            all_recipes = Recipe.objects.all()
-            alternative_suggestions = []
             
-            for recipe in all_recipes:
+            for recipe in recipes:
                   recipe_ingredients = set(recipe.ingredients.values_list("ingredient__name",flat=True))
                   missing_ingredients = recipe_ingredients - set(user_ingredients) #eksik malzemeleri belirliyoz.
+                  
+                  alternative_ingrediends = {}
+                  for missing in missing_ingredients:
+                        alternative_options = IngredientAlternative.objects.filter(original__name=missing)
+                        alternative_ingrediends[missing] = [
+                              {"alternative": alt.alternative.name, "ratio": alt.ratio} for alt in alternative_options
+                        ]
                   
                   if len(missing_ingredients) <= 2 and len(missing_ingredients) > 0:
                         #sonra değiştirebilirim burayı kalsın burası. 2 den az 0 dan büyükse suggest yaptıralım şuan.
                         alternative_suggestions.append({
                               "title":recipe.title,
                               "description":recipe.description,
-                              "missing_ingredients":list(missing_ingredients)
+                              "missing_ingredients":list(missing_ingredients),
+                              "alternative_ingredients": {k: v for k, v in alternative_ingrediends.items() if v}
                         })
             
             return Response({
