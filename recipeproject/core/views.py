@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count
 from django.db import models
+from .ml.ml_recommender import RecipeRecommender
 
 class RecipePagination(PageNumberPagination):
       page_size = 10
@@ -149,11 +150,18 @@ class FindRecipesByIngredientsView(APIView):
                               "missing_ingredients":list(missing_ingredients),
                               "alternative_ingredients": {k: v for k, v in alternative_ingrediends.items() if v}
                         })
+                        
+            #ml model deneme
+            recommender = RecipeRecommender()
+            ml_recommendations = recommender.recommend(
+                  recipe_title if recipe_title else "", user_ingredients, top_n=5
+            )
             
             return Response({
                   "meessage":"there is exact matches." if recipe_list else "No exact matches found.",
                   "recipes":recipe_list,
-                  "suggestions": alternative_suggestions
+                  "suggestions": alternative_suggestions,
+                  "ml_recommendations": ml_recommendations
             }, status=status.HTTP_200_OK)
             
 class GetIngredientsView(APIView):
