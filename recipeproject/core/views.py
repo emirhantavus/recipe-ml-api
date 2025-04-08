@@ -9,6 +9,11 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count
 from django.db import models
 from .ml.ml_recommender import RecipeRecommender
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CSV_PATH = os.path.join(BASE_DIR, 'core', 'ml','ml_models' ,'recipes_cleaned.csv')
+recommender = RecipeRecommender(CSV_PATH)
 
 class RecipePagination(PageNumberPagination):
       page_size = 10
@@ -152,9 +157,12 @@ class FindRecipesByIngredientsView(APIView):
                         })
                         
             #ml model deneme
-            recommender = RecipeRecommender()
+            alpha = float(request.data.get('alpha', 0.5))
             ml_recommendations = recommender.recommend(
-                  recipe_title if recipe_title else "", user_ingredients, top_n=5
+            query_title=recipe_title,
+            user_ingredients=user_ingredients,
+            alpha=alpha,
+            top_n=5
             )
             
             return Response({

@@ -2,3 +2,6 @@ recipeproject/recipeenv
 __pycache__/
 migrations/
 ml/recipe_recommendation/RAW_recipes.csv
+ml/recipe_recommendation/recipes_cleaned.csv
+recipeproject/core/ml/ml_models/RAW_recipes.csv
+recipeproject/core/ml/ml_models/recipes_cleaned.csv

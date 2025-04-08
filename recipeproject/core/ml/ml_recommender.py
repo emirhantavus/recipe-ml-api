@@ -1,49 +1,35 @@
-import pickle
 import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
 import os
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 class RecipeRecommender:
-    def __init__(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        ml_dir = os.path.join(base_dir, './ml_models')
+    def __init__(self, data_path):
+        self.df = pd.read_csv(data_path)
+        self.df["ingredients_cleaned"] = self.df["ingredients_cleaned"].fillna("")
 
-        with open(os.path.join(ml_dir, 'vectorizer.pkl'), 'rb') as f:
-            self.vectorizer = pickle.load(f)
-        
-        with open(os.path.join(ml_dir, 'tfidf_matrix.pkl'), 'rb') as f:
-            self.tfidf_matrix = pickle.load(f)
+        self.title_vectorizer = TfidfVectorizer()
+        self.title_matrix = self.title_vectorizer.fit_transform(self.df["name"])
 
-        self.df = pd.read_csv(os.path.join(ml_dir, 'recipes.csv'))
+        self.ingredient_vectorizer = TfidfVectorizer()
+        self.ingredient_matrix = self.ingredient_vectorizer.fit_transform(self.df["ingredients_cleaned"])
 
-    def recommend(self, recipe_title, user_ingredients, top_n=5):
-        user_ingredients = [ing.strip().lower() for ing in user_ingredients]
+    def recommend(self, query_title, user_ingredients, alpha=0.5, top_n=5):
+        title_vec = self.title_vectorizer.transform([query_title])
+        ingredient_query = " ".join(user_ingredients)
+        ingredient_vec = self.ingredient_vectorizer.transform([ingredient_query])
 
-        filtered_recipes = self.df[self.df['title'].str.contains(recipe_title, case=False)].copy()
+        title_sim = cosine_similarity(title_vec, self.title_matrix).flatten()
+        ingredient_sim = cosine_similarity(ingredient_vec, self.ingredient_matrix).flatten()
 
-        if filtered_recipes.empty:
-            return []
+        final_score = alpha * title_sim + (1 - alpha) * ingredient_sim
+        top_indices = final_score.argsort()[-top_n:][::-1]
 
-        user_ing_text = " ".join(user_ingredients)
-        user_vec = self.vectorizer.transform([user_ing_text])
-        
-        sim_scores = cosine_similarity(user_vec, self.tfidf_matrix[filtered_recipes.index]).flatten()
-        top_indices = sim_scores.argsort()[-top_n:][::-1]
-
-        recommendations = []
-        for i in top_indices:
-            idx = filtered_recipes.index[i]
-            rec_recipe = self.df.iloc[idx]
-
-            recipe_ingredients = [ing.strip().lower() for ing in rec_recipe['ingredients'].split(',')]
-
-            missing_ingredients = set(recipe_ingredients) - set(user_ingredients)
-
-            recommendations.append({
-                "title": rec_recipe['title'],
-                "ingredients": recipe_ingredients,
-                "missing_ingredients": list(missing_ingredients),
-                "similarity_score": sim_scores[i]
+        results = []
+        for idx in top_indices:
+            results.append({
+                "title": self.df.iloc[idx]["name"],
+                "ingredients": self.df.iloc[idx]["ingredients_cleaned"],
+                "similarity_score": round(final_score[idx], 3)
             })
-
-        return recommendations
+        return results
