@@ -1,3 +1,4 @@
 recipeproject/recipeenv
 __pycache__/
 migrations/
+ml/recipe_recommendation/RAW_recipes.csv
