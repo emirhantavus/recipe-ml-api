@@ -30,7 +30,11 @@
 {
   "name": "deneme",
   "email": "deneme@gmail.com",
+<<<<<<< HEAD
   "password": "123456",
+=======
+  "password": "deneme123",
+>>>>>>> 190e6a3b68e4e046f991918e0edb9f4e3c44254a
 }
 ```
 
@@ -39,7 +43,11 @@
 ```json
 {
   "email": "deneme@gmail.com",
+<<<<<<< HEAD
   "password": "123456"
+=======
+  "password": "deneme123"
+>>>>>>> 190e6a3b68e4e046f991918e0edb9f4e3c44254a
 }
 ```
 
