@@ -6,8 +6,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny , IsAuthenticated
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer , PasswordChangeSerializer ,PasswordResetConfirmSerializer , PasswordResetSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.http import urlsafe_base64_encode , urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
 
 User = get_user_model()
 
@@ -51,3 +55,52 @@ class LogoutView(APIView):
                   return Response({'message':'Logout Successful'},status=status.HTTP_205_RESET_CONTENT)
             except Exception as e:
                   return Response({'error':'Invalid Token'},status=status.HTTP_400_BAD_REQUEST)      
+            
+            
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            try:
+                user = User.objects.get(email=email)
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                reset_link = f"{request.scheme}://{request.get_host()}/api/users/password-reset-confirm/{uid}/{token}/"
+
+                send_mail(
+                    'Password Reset Request',
+                    f'Click the link below to reset your password:\n{reset_link}',
+                    'no-reply@myapp.com',
+                    [email],
+                    fail_silently=False,
+                )
+                return Response({"message": "Password reset email has been sent."}, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        serializer = PasswordResetConfirmSerializer(data={
+            'new_password': request.data.get('new_password'),
+            'uidb64': uidb64,
+            'token': token,
+        })
+        if serializer.is_valid():
+            return Response({"message": "Password has been reset."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Password has been changed."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

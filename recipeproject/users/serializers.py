@@ -3,6 +3,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from .models import Profile
 from core.models import Recipe
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+
 
 User = get_user_model()
 
@@ -38,3 +41,65 @@ class ProfileSerializer(serializers.ModelSerializer):
       class Meta:
             model = Profile
             fields = ('nickname', 'avatar', 'favorite_recipes')
+            
+            
+class PasswordResetSerializer(serializers.Serializer):
+      email = serializers.EmailField()
+      
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+      new_password = serializers.CharField(write_only=True, min_length=8)
+      new_password2 = serializers.CharField(write_only=True, min_length=8)
+      uidb64 = serializers.CharField()
+      token = serializers.CharField()   
+        
+      def validate(self, data):
+            try:
+                  uid = urlsafe_base64_decode(data['uidb64']).decode()
+                  user = User.objects.get(pk=uid)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                  raise serializers.ValidationError("Invalid UID or Token") 
+            
+            if not default_token_generator.check_token(user, data['token']):
+                  raise serializers.ValidationError("Invalid token")
+            
+            if data['new_password'] != data['new_password2']:
+                  raise serializers.ValidationError({"new_password2": "Passwords do not match."})
+            
+            self.user = user
+            return data
+      
+      def save(self, **kwargs):
+            new_password = self.validated_data['new_password']
+            self.user.set_password(new_password)
+            self.user.save()
+            
+            return self.user
+
+      
+class PasswordChangeSerializer(serializers.Serializer):
+      old_password = serializers.CharField(write_only=True)
+      new_password = serializers.CharField(write_only=True)
+      new_password2 = serializers.CharField(write_only=True)
+       
+      def validate_old_password(self, value):
+            user = self.context['request'].user
+            if not user.check_password(value):
+                  raise serializers.ValidationError("Old password is not correct")
+            return value
+      
+      def validate(self, attrs):
+            if attrs["new_password"] != attrs["new_password2"]:
+                  raise serializers.ValidationError({"error":"Passwords don't match."})
+            
+            if attrs["old_password"] == attrs["new_password"]:
+                  raise serializers.ValidationError({"error":"New password must be different."})
+            
+            return attrs
+      
+      def save(self):
+            user = self.context['request'].user
+            user.set_password(self.validated_data['new_password'])
+            user.save()
+            
+            return user
