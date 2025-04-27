@@ -12,6 +12,10 @@ from django.utils.http import urlsafe_base64_encode , urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
+from core.models import Recipe
+from core.serializers import RecipeSeralizer
+from rest_framework import generics
 
 User = get_user_model()
 
@@ -104,3 +108,26 @@ class PasswordChangeView(APIView):
             serializer.save()
             return Response({"message": "Password has been changed."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class AddFavoriteRecipeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request,recipe_id):
+        profile = request.user.profile
+        recipe = get_object_or_404(Recipe, id = recipe_id)
+        
+        if recipe in profile.favorite_recipes.all():
+            profile.favorite_recipes.remove(recipe)
+            return Response({"message":"Removed from favorites"},status=status.HTTP_200_OK)
+        else:
+            profile.favorite_recipes.add(recipe)
+            return Response({"message":"Added to favorites"},status=status.HTTP_200_OK)
+        
+class FavoriteListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RecipeSeralizer
+    
+    def get_queryset(self):
+        profile = self.request.user.profile
+        return profile.favorite_recipes.all()

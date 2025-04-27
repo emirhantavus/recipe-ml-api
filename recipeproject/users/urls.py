@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
       LoginView , RegisterView, LogoutView, 
-      PasswordChangeView , PasswordResetConfirmView , PasswordResetRequestView)
+      PasswordChangeView , PasswordResetConfirmView , PasswordResetRequestView,
+      AddFavoriteRecipeAPIView, FavoriteListAPIView)
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -12,4 +13,6 @@ urlpatterns = [
       path("password-reset-confirm/<uidb64>/<token>/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
       path("password-change/", PasswordChangeView.as_view(), name="password-change"),
       path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+      path('favorites/', FavoriteListAPIView.as_view(), name='favorites-list'),
+      path('favorites/<int:recipe_id>/add/', AddFavoriteRecipeAPIView.as_view(), name='favorites-add'),
 ]
