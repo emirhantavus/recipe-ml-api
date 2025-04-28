@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext"; // Eğer yoksa eklemelisin
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
+import Profile from "./pages/Profile";
 
 import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
@@ -24,6 +25,7 @@ function AppRoutes() {
           <Route path="/recipes" element={<Recipes />} />
           <Route path="/recipes/:id" element={<RecipeDetail />} /> {/* Burada doğru: recipes */}
           <Route path="/reset" element={<ResetPassword />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

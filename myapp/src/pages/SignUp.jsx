@@ -1,35 +1,62 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useContext, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 function SignUp() {
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/profile"); // Eğer zaten giriş yapmışsa
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (password !== password2) {
       alert("Passwords do not match!");
       return;
     }
-    console.log("Sign Up with:", { username, email, password });
-    // API'ye kayıt isteği burada yapılacak
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/users/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          password2: password2,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Registration successful!");
+        navigate("/signin");
+      } else {
+        const data = await response.json();
+        console.error(data);
+        alert("Registration failed: " + (data.error || "Please try again."));
+      }
+    } catch (error) {
+      console.error("Error during registration:", error);
+      alert("An unexpected error occurred. Please try again later.");
+    }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-96 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded shadow-md w-96 space-y-4"
+      >
         <h2 className="text-2xl font-bold text-center">Sign Up</h2>
-
-        <input
-          type="text"
-          placeholder="Username"
-          className="w-full p-2 border rounded"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
 
         <input
           type="email"
@@ -58,15 +85,20 @@ function SignUp() {
           required
         />
 
-        <button type="submit" className="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700">
+        <button
+          type="submit"
+          className="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700"
+        >
           Sign Up
         </button>
 
         <p className="text-sm text-center">
           Already have an account?{" "}
-          <Link to="/signin" className="text-purple-600 font-medium hover:underline">
-            Sign in
-          </Link>
+          {!user && (
+            <Link to="/signin" className="text-purple-600 font-medium hover:underline">
+              Sign in
+            </Link>
+          )}
         </p>
       </form>
     </div>
