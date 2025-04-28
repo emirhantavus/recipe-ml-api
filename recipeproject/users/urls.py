@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
       LoginView , RegisterView, LogoutView, 
       PasswordChangeView , PasswordResetConfirmView , PasswordResetRequestView,
-      AddFavoriteRecipeAPIView, FavoriteListAPIView)
+      AddFavoriteRecipeAPIView, FavoriteListAPIView, ProfileAPIView)
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
       path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
       path('favorites/', FavoriteListAPIView.as_view(), name='favorites-list'),
       path('favorites/<int:recipe_id>/add/', AddFavoriteRecipeAPIView.as_view(), name='favorites-add'),
+      path('profile/', ProfileAPIView.as_view(), name='user-profile'),
 ]
