@@ -8,4 +8,5 @@ recipeproject/core/ml/ml_models/recipes_cleaned.csv
 ml/recipe_recommendation/RAW_recipes-checkpoint.csv
 ml/recipe_recommendation/.ipynb_checkpoints/
 ml/recipe_recommendation/RAW_recipes-checkpoint.csv
+recipeenv/
 recipeproject/core/ml/ml_models/recipes_cleaned.rar
