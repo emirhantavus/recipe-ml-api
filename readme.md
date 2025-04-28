@@ -1,9 +1,9 @@
 # 📚 SmartChef API Documentation
 
 ## 🛡️ User Endpoints
-- **POST /api/register/** → User Registration  
-- **POST /api/login/** → User Login  
-- **GET /api/profile/** → Get User Profile
+- **POST /api/users/register/** → User Registration  
+- **POST /api/users/login/** → User Login  
+- **GET /api/users/profile/** → Get User Profile
 - **POST /api/users/password-reset/** → Request Password Reset (Send email)  
 - **POST /api/users/password-reset-confirm/{uidb64}/{token}/** → Confirm Password Reset  
 - **POST /api/users/password-change/** → Change Password (From Profile)  
@@ -31,7 +31,7 @@
 ## 📬 Example Requests and Responses
 
 ### ➡️ Register
-**POST /api/register/**  
+**POST /api/users/register/**  
 ```json
 {
   "name": "deneme",
@@ -42,7 +42,7 @@
 ```
 
 ### ➡️ Login
-**POST /api/login/**  
+**POST /api/users/login/**  
 ```json
 {
   "email": "deneme@gmail.com",

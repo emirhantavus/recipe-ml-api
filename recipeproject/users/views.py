@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404
 from core.models import Recipe
 from core.serializers import RecipeSeralizer
 from rest_framework import generics
+from .serializers import ProfileSerializer
 
 User = get_user_model()
 
@@ -131,3 +132,11 @@ class FavoriteListAPIView(generics.ListAPIView):
     def get_queryset(self):
         profile = self.request.user.profile
         return profile.favorite_recipes.all()
+    
+class ProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = request.user.profile
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
