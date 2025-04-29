@@ -1,8 +1,12 @@
 import { useState } from "react";
+import API from "../api/api";
 
 function RecipeFinder() {
   const [ingredients, setIngredients] = useState([]);
   const [input, setInput] = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const addIngredient = (e) => {
     e.preventDefault();
@@ -12,9 +16,23 @@ function RecipeFinder() {
     }
   };
 
-  const suggestRecipes = () => {
-    console.log("Suggesting recipes for:", ingredients);
-    // Burada API isteği yapılacak!
+  const suggestRecipes = async () => {
+    setLoading(true);
+    setError(null);
+    setResults(null);
+
+    try {
+      const response = await API.post("find-recipes/", {
+        ingredients: ingredients,
+        alpha: 0.5, // veya kullanıcıdan alabilirsin
+      });
+      setResults(response.data);
+    } catch (err) {
+      setError("Could not fetch recipes. Please try again.");
+      console.error("Recipe suggestion error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,8 +88,60 @@ function RecipeFinder() {
           onClick={suggestRecipes}
           className="w-full bg-green-600 hover:bg-green-700 text-white p-2 rounded text-lg"
         >
-          Suggest Recipes
+          {loading ? "Searching..." : "Suggest Recipes"}
         </button>
+      )}
+
+      {error && <p className="text-red-600 mt-4">{error}</p>}
+
+      {results && (
+        <div className="mt-8 space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Exact Matches</h2>
+            {results.recipes.length > 0 ? (
+              results.recipes.map((r, index) => (
+                <div key={index} className="bg-green-100 p-4 rounded shadow-sm mb-4">
+                  <h3 className="font-semibold text-lg">{r.title}</h3>
+                  <p className="text-sm text-gray-700">{r.description}</p>
+                  <p className="text-sm mt-2"><strong>Ingredients:</strong> {r.ingredients.join(", ")}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No exact matches found.</p>
+            )}
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Suggestions with Alternative Ingredients</h2>
+            {results.suggestions.map((s, index) => (
+              <div key={index} className="bg-yellow-100 p-4 rounded shadow-sm mb-4">
+                <h3 className="font-semibold text-lg">{s.title}</h3>
+                <p className="text-sm text-gray-700">{s.description}</p>
+                <p className="text-sm mt-2"><strong>Missing:</strong> {s.missing_ingredients.join(", ")}</p>
+                {Object.keys(s.alternative_ingredients).length > 0 && (
+                  <ul className="text-sm mt-2 space-y-1">
+                    {Object.entries(s.alternative_ingredients).map(([missing, alts], i) => (
+                      <li key={i}>
+                        <strong>{missing}:</strong>{" "}
+                        {alts.map((a) => `${a.alternative} (x${a.ratio})`).join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold mb-4">ML Recommendations</h2>
+            {results.ml_recommendations.map((r, index) => (
+              <div key={index} className="bg-blue-100 p-4 rounded shadow-sm mb-4">
+                <h3 className="font-semibold text-lg">{r.title}</h3>
+                <p className="text-sm text-gray-700">{r.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
