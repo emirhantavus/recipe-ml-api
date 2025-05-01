@@ -1,62 +1,58 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import API from "../api/api";
 
 function RecipeDetail() {
   const { id } = useParams();
+  const [recipe, setRecipe] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
-  const recipes = [
-    {
-      id: "1",
-      title: "Karnıyarık",
-      image: "/assets/karniyarik.jpg",
-      description: "Eggplants stuffed with minced meat and spices, baked to perfection.",
-      ingredients: ["Eggplant", "Minced Meat", "Onion", "Garlic", "Tomato", "Parsley"],
-      steps: [
-        "Cut the eggplants and fry them lightly.",
-        "Prepare the minced meat filling.",
-        "Stuff the eggplants and bake in the oven.",
-      ],
-      preparationTime: "1 hour",
-      calories: "450 kcal",
-    },
-    {
-      id: "2",
-      title: "Mercimek Çorbası",
-      image: "/assets/mercimek.jpg",
-      description: "A hearty Turkish lentil soup, perfect for any season.",
-      ingredients: ["Red Lentils", "Onion", "Carrot", "Potato", "Butter", "Paprika"],
-      steps: [
-        "Boil the lentils and vegetables together.",
-        "Blend the mixture until smooth.",
-        "Top with melted butter and paprika before serving.",
-      ],
-      preparationTime: "40 minutes",
-      calories: "320 kcal",
-    },
-    {
-      id: "3",
-      title: "Baklava",
-      image: "/assets/baklava.jpg",
-      description: "Traditional Turkish dessert made with layers of filo pastry and nuts, soaked in syrup.",
-      ingredients: ["Phyllo Dough", "Pistachios", "Butter", "Sugar", "Water", "Lemon Juice"],
-      steps: [
-        "Layer the phyllo dough with butter and nuts.",
-        "Bake until golden and crispy.",
-        "Pour cold syrup over hot baklava and let it soak.",
-      ],
-      preparationTime: "1.5 hours",
-      calories: "600 kcal",
-    },
-  ];
+  const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "");
 
-  const recipe = recipes.find((r) => r.id === id);
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const res = await API.get(`recipes/${id}/`);
+        setRecipe(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Tarif alınamadı:", err);
+        setLoading(false);
+      }
+    };
 
-  const [saved, setSaved] = useState(false);
+    const checkIfFavorite = async () => {
+      try {
+        const res = await API.get("users/profile/");
+        const favs = res.data.favorite_recipes || [];
+        const exists = favs.some((r) => r.id === parseInt(id));
+        setIsFavorite(exists);
+      } catch (err) {
+        console.error("Favoriler kontrol edilemedi:", err);
+      }
+    };
 
-  const handleSaveFavorite = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    fetchRecipe();
+    checkIfFavorite();
+  }, [id]);
+
+  const handleToggleFavorite = async () => {
+    setProcessing(true);
+    try {
+      const res = await API.post(`users/favorites/${id}/add/`);
+      setIsFavorite(res.data.added); // backend'den {"added": true/false} geliyor
+    } catch (err) {
+      console.error("Favori ekleme/çıkarma hatası:", err);
+    } finally {
+      setProcessing(false);
+    }
   };
+
+  if (loading) {
+    return <div className="text-center mt-20 text-xl">Loading...</div>;
+  }
 
   if (!recipe) {
     return (
@@ -72,56 +68,45 @@ function RecipeDetail() {
     );
   }
 
+  const imageUrl = recipe.image
+    ? `${apiHost}${recipe.image}`
+    : "/assets/default.jpg";
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#c1c7f7] to-white py-12 px-6">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
-
-        {/* 🔥 FOTOĞRAF EKLENDİ */}
         <img
-          src={recipe.image}
+          src={imageUrl}
           alt={recipe.title}
           className="w-full max-h-96 object-cover rounded-lg mb-8 shadow-md"
         />
 
-        {/* Başlık */}
         <h1 className="text-4xl font-bold text-purple-700 mb-6">{recipe.title}</h1>
 
-        {/* Ekstra Bilgiler */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 text-gray-600 w-full">
-          <div><strong>Preparation Time:</strong> {recipe.preparationTime}</div>
-          <div><strong>Calories:</strong> {recipe.calories}</div>
+          <div><strong>Preparation Time:</strong> {recipe.prep_time} min</div>
+          <div><strong>Cooking Time:</strong> {recipe.cook_time} min</div>
+          <div><strong>Servings:</strong> {recipe.servings}</div>
         </div>
 
-        {/* Açıklama */}
         <p className="text-gray-600 mb-8">{recipe.description}</p>
 
-        {/* Malzemeler */}
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Ingredients</h2>
-        <ul className="list-disc list-inside mb-8 text-gray-600 space-y-2">
-          {recipe.ingredients.map((item, index) => (
-            <li
-              key={index}
-              className="transition-transform transform hover:scale-105 hover:text-purple-600 duration-300"
-            >
-              {item}
+        <ul className="list-disc list-inside mb-8 text-gray-600 w-full space-y-2">
+          {recipe.ingredients.map((item, idx) => (
+            <li key={idx}>
+              {item.amount} {item.unit} – {item.ingredient_name}
             </li>
           ))}
         </ul>
 
-        {/* Hazırlık Adımları */}
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Preparation Steps</h2>
-        <ol className="list-decimal list-inside text-gray-600 space-y-2">
-          {recipe.steps.map((step, index) => (
-            <li
-              key={index}
-              className="transition-transform transform hover:scale-105 hover:text-purple-600 duration-300"
-            >
-              {step}
-            </li>
+        <ol className="list-decimal list-inside text-gray-600 w-full space-y-2">
+          {recipe.instructions.split(".").filter(Boolean).map((step, i) => (
+            <li key={i}>{step.trim()}.</li>
           ))}
         </ol>
 
-        {/* Butonlar */}
         <div className="mt-10 flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-4 w-full">
           <Link
             to="/recipes"
@@ -129,15 +114,20 @@ function RecipeDetail() {
           >
             ← Back to Recipes
           </Link>
-
           <button
-            onClick={handleSaveFavorite}
-            className={`inline-block ${saved ? 'bg-green-500' : 'bg-purple-600 hover:bg-purple-700'} text-white font-bold py-2 px-6 rounded-lg transition`}
+            onClick={handleToggleFavorite}
+            disabled={processing}
+            className={`inline-block ${
+              isFavorite ? "bg-red-500" : "bg-purple-600 hover:bg-purple-700"
+            } text-white font-bold py-2 px-6 rounded-lg transition`}
           >
-            {saved ? "Saved!" : "Save to Favorites ❤️"}
+            {processing
+              ? "Processing..."
+              : isFavorite
+              ? "Remove Favorite ❌"
+              : "Save to Favorites ❤️"}
           </button>
         </div>
-
       </div>
     </div>
   );

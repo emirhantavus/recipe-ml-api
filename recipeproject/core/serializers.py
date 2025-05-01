@@ -6,19 +6,26 @@ class IngredientSerializer(serializers.ModelSerializer):
             model = Ingredient
             fields = ('id','name',)
             
-class RecipeIngredientSerailizer(serializers.ModelSerializer):
+class RecipeIngredientSerializer(serializers.ModelSerializer):
       ingredient = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+      ingredient_name = serializers.CharField(source="ingredient.name", read_only=True)
       
       class Meta:
             model = RecipeIngredient
-            fields = ('ingredient','amount','unit')
+            fields = ('ingredient','ingredient_name','amount','unit')
             
-class RecipeSeralizer(serializers.ModelSerializer):
-      ingredients = RecipeIngredientSerailizer(many=True)
+class RecipeSerializer(serializers.ModelSerializer):
+      ingredients = RecipeIngredientSerializer(many=True)
+      ingredient_name = serializers.CharField(source="ingredient.name", read_only=True)
+      image = serializers.ImageField(required=False, allow_null=True,use_url=True)
+      diet_type = serializers.ChoiceField(choices=Recipe.DIET_CHOICES, default='regular')
+      meal_type = serializers.ChoiceField(choices=Recipe.MEAL_CHOICES, default='main')
+      season = serializers.ChoiceField(choices=Recipe.SEASON_CHOICES, default='all')
       
       class Meta:
             model = Recipe
-            fields = ('title','description','instructions','prep_time','cook_time','servings','ingredients')
+            fields = ('id','title','description','instructions','prep_time','cook_time','servings','image',
+                      'diet_type','meal_type','season','ingredients','ingredient_name')
             
       def create(self, validated_data):
             ingredients_data = validated_data.pop('ingredients', [])
@@ -37,18 +44,13 @@ class RecipeSeralizer(serializers.ModelSerializer):
       def update(self, instance, validated_data):
             ingredients_data = validated_data.pop('ingredients',[])
             
-            instance.title = validated_data.get('title', instance.title)
-            instance.description = validated_data.get('description',instance.description)
-            instance.instructions = validated_data.get('instructions',instance.instructions)
-            instance.prep_time = validated_data.get('prep_time',instance.prep_time)
-            instance.cook_time = validated_data.get('cook_time',instance.cook_time)
-            instance.servings = validated_data.get('servings',instance.servings)
+            for attr, value in validated_data.items():
+                  setattr(instance, attr, value)
             instance.save()
             
-            instance.ingredients.clear()
+            instance.ingredients.all().delete()
             
             for data in ingredients_data:
-                  ingredient = data.pop('ingredient')
-                  RecipeIngredient.objects.create(recipe=instance, ingredient=ingredient, **data)
-            
+                  RecipeIngredient.objects.create(recipe=instance, ingredient=data['ingredient'],amount=data['amount'],unit=data['unit'])
+                              
             return instance

@@ -5,7 +5,7 @@ from .models import Profile
 from core.models import Recipe
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
-from core.serializers import RecipeSeralizer
+from core.serializers import RecipeSerializer
 
 User = get_user_model()
 
@@ -36,7 +36,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'title')
 
 class ProfileSerializer(serializers.ModelSerializer):
-    favorite_recipes = RecipeSeralizer(many=True, read_only=True)
+    favorite_recipes = RecipeSerializer(many=True, read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
     avatar = serializers.CharField(required=False, allow_blank=True)
     class Meta:
