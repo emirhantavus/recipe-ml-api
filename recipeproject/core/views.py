@@ -1,14 +1,16 @@
 from django.shortcuts import render
 from .models import Recipe, RecipeIngredient ,Ingredient , IngredientAlternative
-from .serializers import RecipeSeralizer, RecipeIngredientSerailizer,IngredientSerializer
+from .serializers import RecipeSerializer, RecipeIngredientSerializer,IngredientSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status , generics
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count
 from django.db import models
 from .ml.ml_recommender import RecipeRecommender
+from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -68,11 +70,11 @@ class RecipeListCreateAPIView(APIView):
             paginator = RecipePagination()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
                   
-            serializer = RecipeSeralizer(paginated_queryset, many=True)
+            serializer = RecipeSerializer(paginated_queryset, many=True)
             return paginator.get_paginated_response(serializer.data)
       
       def post(self, request):
-            serializer = RecipeSeralizer(data=request.data)
+            serializer = RecipeSerializer(data=request.data)
             if serializer.is_valid():
                   serializer.save()
                   return Response({'message':'Recipe created successfuly'}, status=status.HTTP_201_CREATED)
@@ -81,12 +83,12 @@ class RecipeListCreateAPIView(APIView):
 class RecipeDetailAPIView(APIView):
       def get(self, request, id):
             recipe = get_object_or_404(Recipe,id=id)
-            serializer = RecipeSeralizer(recipe)
+            serializer = RecipeSerializer(recipe)
             return Response(serializer.data,status=status.HTTP_200_OK)
       
       def put(self, request, id):
             recipe = get_object_or_404(Recipe,id=id)
-            serializer = RecipeSeralizer(recipe,data=request.data, partial=True)
+            serializer = RecipeSerializer(recipe,data=request.data, partial=True)
             if serializer.is_valid():
                   serializer.save()
                   return Response(serializer.data,status=status.HTTP_200_OK)
@@ -97,8 +99,7 @@ class RecipeDetailAPIView(APIView):
             recipe_id = recipe.id
             recipe.delete()
             return Response({'message':f"Recipe id: {recipe_id} has been deleted successfuly."},
-                            status=status.HTTP_204_NO_CONTENT
-                        )
+                            status=status.HTTP_204_NO_CONTENT)
             
             
 class FindRecipesByIngredientsView(APIView):
@@ -184,3 +185,16 @@ class GetIngredientsView(APIView):
                   serializer.save()
                   return Response({'message':'Ingredient Created..'},status=status.HTTP_201_CREATED)
             return Response({'error':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+      
+      
+class FilteredRecipeListAPIView(generics.ListAPIView):
+      queryset = Recipe.objects.all().order_by('-created_at')
+      serializer_class = RecipeSerializer
+      pagination_class = RecipePagination
+
+      filter_backends = [DjangoFilterBackend, SearchFilter]
+      filterset_fields = ['diet_type', 'meal_type', 'season']
+      search_fields    = ['title']
+    
+      def get_serializer_context(self):
+            return {'request':self.request}

@@ -14,7 +14,7 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from core.models import Recipe
-from core.serializers import RecipeSeralizer
+from core.serializers import RecipeSerializer
 from rest_framework import generics
 from .serializers import ProfileSerializer
 
@@ -127,7 +127,7 @@ class AddFavoriteRecipeAPIView(APIView):
         
 class FavoriteListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = RecipeSeralizer
+    serializer_class = RecipeSerializer
     
     def get_queryset(self):
         profile = self.request.user.profile
