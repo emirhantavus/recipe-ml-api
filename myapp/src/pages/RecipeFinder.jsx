@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import API from "../api/api"; // 🔥 axios değil, kendi ayarladığın API
 import { Link } from "react-router-dom";
 
 function RecipeFinder() {
@@ -18,7 +18,7 @@ function RecipeFinder() {
 
   const suggestRecipes = async () => {
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/recipes/ml-recommend/", {
+      const res = await API.post("recipes/ml-recommend/", {
         title: queryTitle,
         ingredients,
         alpha: 0.6,
