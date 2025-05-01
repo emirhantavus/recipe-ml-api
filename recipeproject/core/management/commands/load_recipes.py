@@ -14,7 +14,7 @@ class Command(BaseCommand):
         path = os.path.join(settings.BASE_DIR, "turkish_recipes_50_utf8.csv")
 
         if not os.path.exists(path):
-            self.stdout.write(self.style.ERROR("❌ CSV dosyası bulunamadı. Dosya yolu hatalı mı?"))
+            self.stdout.write(self.style.ERROR("CSV dosyası bulunamadı. Dosya yolu hatalı mı?"))
             return
 
         with open(path, encoding="utf-8-sig") as csvfile:
@@ -35,9 +35,9 @@ class Command(BaseCommand):
                     serializer = RecipeSeralizer(data=recipe_data)
                     if serializer.is_valid():
                         serializer.save()
-                        self.stdout.write(self.style.SUCCESS(f"✔️ {row['title']} eklendi."))
+                        self.stdout.write(self.style.SUCCESS(f"{row['title']} eklendi."))
                     else:
-                        self.stdout.write(self.style.WARNING(f"❌ Hatalı tarif: {serializer.errors}"))
+                        self.stdout.write(self.style.WARNING(f"Hatalı tarif: {serializer.errors}"))
 
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"⚠️ {row.get('title', 'Bilinmeyen')} yüklenemedi: {str(e)}"))
