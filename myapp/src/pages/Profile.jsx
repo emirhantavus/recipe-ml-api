@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
+import PasswordChangeModal from "../components/PasswordChangeModal";
 
 function AccountDetails() {
   const [profile, setProfile] = useState(null);
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const avatarOptions = [
     "/media/avatars/avatar1.png",
     "/media/avatars/avatar2.png",
@@ -39,7 +41,7 @@ function AccountDetails() {
   if (!profile) return <div className="text-center mt-10">Loading profile...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-[#bcc0e5] to-white py-12 px-6">
       <header className="py-10 text-center relative">
         <div
           className="inline-block px-6 py-2 rounded"
@@ -67,8 +69,8 @@ function AccountDetails() {
             <a href="/profile" className="flex items-center gap-2 text-sm hover:text-purple-200">
               <i className="fa-solid fa-user"></i> Account Details
             </a>
-            <a href="/saved-recipes" className="flex items-center gap-2 text-sm hover:text-purple-200">
-              <i className="fa-solid fa-bookmark"></i> Saved Recipes
+            <a href="/favorites" className="flex items-center gap-2 text-sm hover:text-purple-200">
+              <i className="fa-solid fa-heart"></i> Favorites Recipes
             </a>
             <a href="/recipe-history" className="flex items-center gap-2 text-sm hover:text-purple-200">
               <i className="fa-solid fa-clock-rotate-left"></i> Recipe History
@@ -101,6 +103,7 @@ function AccountDetails() {
               </div>
             </div>
             <button
+              onClick={() => setShowPasswordModal(true)}
               className="mt-6 px-6 py-2 rounded-full font-semibold shadow"
               style={{ background: "linear-gradient(90deg, #cdffd8, #94b9ff)", color: "black" }}
             >
@@ -174,6 +177,11 @@ function AccountDetails() {
           </div>
         </main>
       </div>
+
+      <PasswordChangeModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 }

@@ -14,7 +14,7 @@ function Navbar() {
   return (
     <nav
       className="h-16 flex justify-between items-center px-6 text-white"
-      style={{ backgroundColor: "#afbbf2" }}
+      style={{ background: "linear-gradient(90deg, #cdffd8, #94b9ff)", color: "white" }}
     >
       {/* Logo */}
       <Link to="/" className="flex items-center h-full">
@@ -31,7 +31,7 @@ function Navbar() {
       <div className="flex space-x-6 items-center">
         <Link
           to="/recipes"
-          className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
+          className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
           title="View all available recipes"
         >
           Recipes
@@ -39,7 +39,7 @@ function Navbar() {
 
         <Link
           to="/recipefinder"
-          className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
+          className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
           title="Find recipes based on your ingredients"
         >
           Recipe Finder
@@ -49,38 +49,36 @@ function Navbar() {
           <>
             <Link
               to="/profile"
-              className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
+              className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
               title="View your profile"
             >
               Profile
             </Link>
 
+            <Link
+              to="/favorites"
+              className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
+              title="View your favorite recipes"
+            >
+              Favorites
+            </Link>
+
             <button
               onClick={handleLogout}
-              className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
+              className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
               title="Sign out from your account"
             >
               Logout
             </button>
           </>
         ) : (
-          <>
-            <Link
-              to="/signin"
-              className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
-              title="Sign in to your account"
-            >
-              Sign In
-            </Link>
-
-            <Link
-              to="/signup"
-              className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
-              title="Create a new account"
-            >
-              Sign Up
-            </Link>
-          </>
+          <Link
+            to="/signin"
+            className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
+            title="Sign in to your account"
+          >
+            Sign In
+          </Link>
         )}
       </div>
     </nav>

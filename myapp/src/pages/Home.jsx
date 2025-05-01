@@ -23,7 +23,7 @@ function Home() {
           </p>
           <a
             href="/signup"
-            className="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition"
+            className="px-8 py-3 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-500 transition"
           >
             Start Your Journey
           </a>
@@ -59,7 +59,7 @@ function Home() {
             ];
             return (
               <div key={index} className="flex flex-col items-center">
-                <div className="bg-white shadow-lg rounded-full w-14 h-14 flex items-center justify-center text-2xl font-bold text-purple-600 mb-4">
+                <div className="bg-white shadow-lg rounded-full w-14 h-14 flex items-center justify-center text-2xl font-bold text-indigo-500 mb-4">
                   {step}
                 </div>
                 <div className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition w-full text-center min-h-[280px] flex flex-col justify-between">
@@ -80,7 +80,7 @@ function Home() {
           
           {/* Site Hakkında */}
           <div>
-            <h3 className="text-2xl font-bold mb-4 text-purple-600">Flavors of Turkey</h3>
+            <h3 className="text-2xl font-bold mb-4 text-indigo-500">Flavors of Turkey</h3>
             <p className="text-gray-600 text-sm">
               Explore authentic Turkish recipes based on the ingredients you have! Bringing the rich culinary heritage of Turkey to your kitchen.
             </p>
@@ -88,25 +88,24 @@ function Home() {
 
           {/* Hızlı Linkler */}
           <div>
-            <h4 className="text-xl font-semibold mb-4 text-purple-600">Quick Links</h4>
+            <h4 className="text-xl font-semibold mb-4 text-indigo-500">Quick Links</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="/signup" className="hover:text-purple-600 transition">Sign Up</a></li>
-              <li><a href="/signin" className="hover:text-purple-600 transition">Sign In</a></li>
-              <li><a href="#how-it-works" className="hover:text-purple-600 transition">How It Works</a></li>
+              <li><a href="/signup" className="hover:hover:bg-indigo-500 transition">Sign Up</a></li>
+              <li><a href="/signin" className="hover:hover:bg-indigo-500 transition">Sign In</a></li>
             </ul>
           </div>
 
           {/* Sosyal Medya */}
           <div>
-            <h4 className="text-xl font-semibold mb-4 text-purple-600">Follow Us</h4>
+            <h4 className="text-xl font-semibold mb-4 text-indigo-500">Follow Us</h4>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-600 hover:text-purple-600 transition text-2xl">
+              <a href="#" className="text-gray-600 transition text-2xl">
                 <i className="fab fa-instagram"></i>
               </a>
-              <a href="#" className="text-gray-600 hover:text-purple-600 transition text-2xl">
+              <a href="#" className="text-gray-600  transition text-2xl">
                 <i className="fab fa-facebook"></i>
               </a>
-              <a href="#" className="text-gray-600 hover:text-purple-600 transition text-2xl">
+              <a href="#" className="text-gray-600  transition text-2xl">
                 <i className="fab fa-twitter"></i>
               </a>
             </div>
