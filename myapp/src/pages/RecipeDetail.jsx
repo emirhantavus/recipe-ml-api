@@ -1,37 +1,57 @@
-import { useParams, Link } from "react-router-dom"
-import { useEffect, useState } from "react"
-import API from "../api/api"
+import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import API from "../api/api";
 
 function RecipeDetail() {
-  const { id } = useParams()
-  const [recipe, setRecipe] = useState(null)
-  const [saved, setSaved] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { id } = useParams();
+  const [recipe, setRecipe] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
-  // API.defaults.baseURL === "http://127.0.0.1:8000/api/"
-  // strip off "/api/" to get host
-  const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "")
+  const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "");
 
   useEffect(() => {
-    API.get(`recipes/${id}/`)
-      .then((res) => {
-        setRecipe(res.data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Tarif alınamadı:", err)
-        setLoading(false)
-      })
-  }, [id])
+    const fetchRecipe = async () => {
+      try {
+        const res = await API.get(`recipes/${id}/`);
+        setRecipe(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Tarif alınamadı:", err);
+        setLoading(false);
+      }
+    };
 
-  const handleSaveFavorite = () => {
-    // TODO: call your favorites endpoint here
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+    const checkIfFavorite = async () => {
+      try {
+        const res = await API.get("users/profile/");
+        const favs = res.data.favorite_recipes || [];
+        const exists = favs.some((r) => r.id === parseInt(id));
+        setIsFavorite(exists);
+      } catch (err) {
+        console.error("Favoriler kontrol edilemedi:", err);
+      }
+    };
+
+    fetchRecipe();
+    checkIfFavorite();
+  }, [id]);
+
+  const handleToggleFavorite = async () => {
+    setProcessing(true);
+    try {
+      const res = await API.post(`users/favorites/${id}/add/`);
+      setIsFavorite(res.data.added); // backend'den {"added": true/false} geliyor
+    } catch (err) {
+      console.error("Favori ekleme/çıkarma hatası:", err);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   if (loading) {
-    return <div className="text-center mt-20 text-xl">Loading...</div>
+    return <div className="text-center mt-20 text-xl">Loading...</div>;
   }
 
   if (!recipe) {
@@ -45,13 +65,12 @@ function RecipeDetail() {
           ← Back to Recipes
         </Link>
       </div>
-    )
+    );
   }
 
-  // build full image URL
   const imageUrl = recipe.image
     ? `${apiHost}${recipe.image}`
-    : "/assets/default.jpg"
+    : "/assets/default.jpg";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#c1c7f7] to-white py-12 px-6">
@@ -65,15 +84,9 @@ function RecipeDetail() {
         <h1 className="text-4xl font-bold text-purple-700 mb-6">{recipe.title}</h1>
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 text-gray-600 w-full">
-          <div>
-            <strong>Preparation Time:</strong> {recipe.prep_time} min
-          </div>
-          <div>
-            <strong>Cooking Time:</strong> {recipe.cook_time} min
-          </div>
-          <div>
-            <strong>Servings:</strong> {recipe.servings}
-          </div>
+          <div><strong>Preparation Time:</strong> {recipe.prep_time} min</div>
+          <div><strong>Cooking Time:</strong> {recipe.cook_time} min</div>
+          <div><strong>Servings:</strong> {recipe.servings}</div>
         </div>
 
         <p className="text-gray-600 mb-8">{recipe.description}</p>
@@ -89,12 +102,9 @@ function RecipeDetail() {
 
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Preparation Steps</h2>
         <ol className="list-decimal list-inside text-gray-600 w-full space-y-2">
-          {recipe.instructions
-            .split(".")
-            .filter(Boolean)
-            .map((step, i) => (
-              <li key={i}>{step.trim()}.</li>
-            ))}
+          {recipe.instructions.split(".").filter(Boolean).map((step, i) => (
+            <li key={i}>{step.trim()}.</li>
+          ))}
         </ol>
 
         <div className="mt-10 flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-4 w-full">
@@ -105,17 +115,22 @@ function RecipeDetail() {
             ← Back to Recipes
           </Link>
           <button
-            onClick={handleSaveFavorite}
+            onClick={handleToggleFavorite}
+            disabled={processing}
             className={`inline-block ${
-              saved ? "bg-green-500" : "bg-purple-600 hover:bg-purple-700"
+              isFavorite ? "bg-red-500" : "bg-purple-600 hover:bg-purple-700"
             } text-white font-bold py-2 px-6 rounded-lg transition`}
           >
-            {saved ? "Saved!" : "Save to Favorites ❤️"}
+            {processing
+              ? "Processing..."
+              : isFavorite
+              ? "Remove Favorite ❌"
+              : "Save to Favorites ❤️"}
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default RecipeDetail
+export default RecipeDetail;
