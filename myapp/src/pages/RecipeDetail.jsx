@@ -41,10 +41,15 @@ function RecipeDetail() {
   const handleToggleFavorite = async () => {
     setProcessing(true);
     try {
-      const res = await API.post(`users/favorites/${id}/add/`);
-      setIsFavorite(res.data.added); // backend'den {"added": true/false} geliyor
+      // optimistic UI update
+      setIsFavorite((prev) => !prev);
+  
+      await API.post(`users/favorites/${id}/add/`);
+      // backend cevabını kontrol etmeden önce UI zaten güncellendi
     } catch (err) {
       console.error("Favori ekleme/çıkarma hatası:", err);
+      // hata olduysa geri al
+      setIsFavorite((prev) => !prev);
     } finally {
       setProcessing(false);
     }

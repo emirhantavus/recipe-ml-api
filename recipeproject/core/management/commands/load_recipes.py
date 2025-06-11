@@ -3,7 +3,7 @@ import csv
 import json
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from core.serializers import RecipeSeralizer
+from core.serializers import RecipeSerializer
 from core.models import Ingredient
 
 class Command(BaseCommand):
@@ -32,7 +32,7 @@ class Command(BaseCommand):
                         "ingredients": ingredients_data,
                     }
 
-                    serializer = RecipeSeralizer(data=recipe_data)
+                    serializer = RecipeSerializer(data=recipe_data)
                     if serializer.is_valid():
                         serializer.save()
                         self.stdout.write(self.style.SUCCESS(f"{row['title']} eklendi."))

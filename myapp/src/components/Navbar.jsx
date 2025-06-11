@@ -48,6 +48,14 @@ function Navbar() {
         {user ? (
           <>
             <Link
+              to="/favorites"
+              className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
+              title="View your favorite recipes"
+            >
+              Favorites
+            </Link>
+
+            <Link
               to="/profile"
               className="hover:bg-purple-700 px-3 py-1 rounded font-bold"
               title="View your profile"
