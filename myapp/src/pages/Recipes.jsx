@@ -18,7 +18,7 @@ export default function Recipes() {
     { value: "vegetarian", label: "Vegetarian" },
     { value: "vegan", label: "Vegan" },
     { value: "gluten_free", label: "Gluten Free" },
-    { value: "keto", label: "Keto" },
+    
   ];
 
   const mealOptions = [
@@ -39,10 +39,10 @@ export default function Recipes() {
     { value: "winter", label: "Winter" },
   ];
 
-  const fetchRecipes = useCallback(() => {
+  const fetchRecipes = useCallback(() => {//usecallback---fobk sadece bağımlılıklar değiştirirse baştan oluşturur
     setLoading(true);
     API.get("recipes/recipes/", {
-      params: {
+      params: {//Apı gönderilen parametreler
         page: currentPage,
         page_size: 12,
         ordering: "-created_at",
@@ -52,21 +52,22 @@ export default function Recipes() {
         season: seasonFilter || undefined,
       },
     })
-      .then((res) => {
+      .then((res) => {//istek başarılı ise
         setRecipes(res.data.results);
-        setTotalPages(Math.ceil(res.data.count / 12));
+        setTotalPages(Math.ceil(res.data.count / 12));//Toplam sayfa sayısını state kaydeder
       })
       .catch((err) => console.error("Tarifler alınamadı:", err))
       .finally(() => setLoading(false));
   }, [search, dietFilter, mealFilter, seasonFilter, currentPage]);
+  //bağıımlılık dizisi(bunlardan biri değişirse ilgili fonk tekrar çalışır--usecallback sayesinde)
 
   useEffect(() => {
     fetchRecipes();
-  }, [fetchRecipes]);
+  }, [fetchRecipes]);// fetch recipe değişirse useEffect çalışsın.Yani tarfileri tekrar backend çeker
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage) => {// kullanıcının gitmek istediği sayfa
     if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+      setCurrentPage(newPage);//yeni sayfa numarası
     }
   };
 

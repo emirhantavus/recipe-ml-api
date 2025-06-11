@@ -58,7 +58,7 @@ function AccountDetails() {
               alt="Avatar"
               className="w-20 h-20 rounded-full object-cover mb-2"
             />
-            <h2 className="text-lg font-semibold">{profile.nickname}</h2>
+            <h2 className="text-lg font-semibold">{profile.username}</h2>
           </div>
           <nav className="space-y-4">
             <a href="/" className="flex items-center gap-2 text-sm hover:text-purple-200">
@@ -85,7 +85,7 @@ function AccountDetails() {
                 <label className="block text-sm font-medium text-gray-600">Username</label>
                 <input
                   type="text"
-                  value={profile.nickname}
+                  value={profile.username}
                   disabled
                   className="mt-1 block w-full rounded-md bg-gray-100 border-gray-300 shadow-sm cursor-not-allowed"
                 />

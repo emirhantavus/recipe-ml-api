@@ -70,6 +70,7 @@
   </div>
 </footer>
 
+// eslint-disable-next-line no-lone-blocks
 {/* Back to Top Butonu */}
 <a
   href="#top"

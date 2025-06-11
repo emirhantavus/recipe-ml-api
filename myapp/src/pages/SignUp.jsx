@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 
 function SignUp() {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(""); // Yeni alan
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const { user } = useContext(AuthContext);
@@ -11,7 +12,7 @@ function SignUp() {
 
   useEffect(() => {
     if (user) {
-      navigate("/profile"); // Eğer zaten giriş yapmışsa
+      navigate("/profile"); // Zaten giriş yapılmışsa yönlendir
     }
   }, [user, navigate]);
 
@@ -31,6 +32,7 @@ function SignUp() {
         },
         body: JSON.stringify({
           email: email,
+          username: username, // Backend'e gönder
           password: password,
           password2: password2,
         }),
@@ -42,7 +44,7 @@ function SignUp() {
       } else {
         const data = await response.json();
         console.error(data);
-        alert("Registration failed: " + (data.error || "Please try again."));
+        alert("Registration failed: " + (data.error || JSON.stringify(data)));
       }
     } catch (error) {
       console.error("Error during registration:", error);
@@ -64,6 +66,15 @@ function SignUp() {
           className="w-full p-2 border rounded"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Username"
+          className="w-full p-2 border rounded"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
 

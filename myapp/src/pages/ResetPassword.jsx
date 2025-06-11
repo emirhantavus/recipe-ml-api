@@ -2,14 +2,14 @@ import { useState } from "react";
 
 function ResetPassword() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(false);//form gönderildi mi gönderilmedi bunu kontrol eder
 
+  //form gönderilidğinde çalışır
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault();//send reset link basınca sayfanın yenilenmesini engeller
 
     // Backend'e istek: buraya gerçek API eklenecek
-    console.log("Şifre sıfırlama isteği gönderildi:", email);
-
+    console.log("Şifre sıfırlama isteği gönderildi:", email);//konsola yazar(test)
     setSubmitted(true);
   };
 
@@ -18,7 +18,7 @@ function ResetPassword() {
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-96 space-y-4">
         <h2 className="text-2xl font-bold text-center">Reset Password</h2>
 
-        {!submitted ? (
+        {!submitted ? (//true olursa çalışır
           <>
             <input
               type="email"

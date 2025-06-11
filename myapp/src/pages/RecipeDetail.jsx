@@ -1,13 +1,28 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../api/api";
+import AlternativesPopup from "../components/AlternativesPopup";
 
 function RecipeDetail() {
   const { id } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const missingIngredientsStr = searchParams.get("missingIngredients") || "";
+  const missingIngredientsList = missingIngredientsStr
+    ? missingIngredientsStr.split(",").map(str => str.trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  const [missingIngredients, setMissingIngredients] = useState(
+    missingIngredientsList.map(ingredient_name => ({ ingredient_name }))
+  );
+
   const [recipe, setRecipe] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+
+  const [showPopup, setShowPopup] = useState(false);
+  //const [cart, setCart] = useState([]);
 
   const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "");
 
@@ -18,7 +33,7 @@ function RecipeDetail() {
         setRecipe(res.data);
         setLoading(false);
       } catch (err) {
-        console.error("Tarif alınamadı:", err);
+        console.error("Could not fetch recipe:", err);
         setLoading(false);
       }
     };
@@ -27,10 +42,10 @@ function RecipeDetail() {
       try {
         const res = await API.get("users/profile/");
         const favs = res.data.favorite_recipes || [];
-        const exists = favs.some((r) => r.id === parseInt(id));
+        const exists = favs.some(r => r.id === parseInt(id));
         setIsFavorite(exists);
       } catch (err) {
-        console.error("Favoriler kontrol edilemedi:", err);
+        console.error("Could not check favorites:", err);
       }
     };
 
@@ -41,18 +56,27 @@ function RecipeDetail() {
   const handleToggleFavorite = async () => {
     setProcessing(true);
     try {
-      // optimistic UI update
-      setIsFavorite((prev) => !prev);
-  
+      setIsFavorite(prev => !prev);
       await API.post(`users/favorites/${id}/add/`);
-      // backend cevabını kontrol etmeden önce UI zaten güncellendi
     } catch (err) {
-      console.error("Favori ekleme/çıkarma hatası:", err);
-      // hata olduysa geri al
-      setIsFavorite((prev) => !prev);
+      console.error("Error toggling favorite:", err);
+      setIsFavorite(prev => !prev);
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleSuggestAlternatives = () => {
+    const altList = missingIngredients
+      .map(item => `${item.ingredient_name}: chia seeds (example)`)
+      .join("\n");
+    alert("Suggested alternatives:\n" + altList);
+  };
+
+  const handleRemoveMissing = (itemToRemove) => {
+    setMissingIngredients((prev) =>
+      prev.filter((item) => item.ingredient_name !== itemToRemove.ingredient_name)
+    );
   };
 
   if (loading) {
@@ -95,6 +119,26 @@ function RecipeDetail() {
         </div>
 
         <p className="text-gray-600 mb-8">{recipe.description}</p>
+
+        {/* Missing Ingredients Button & Popup */}
+        <div className="w-full flex justify-end mb-4">
+          <button
+            onClick={() => setShowPopup(true)}
+            className="bg-blue-100 hover:bg-blue-200 text-blue-900 px-4 py-2 rounded-lg shadow font-semibold transition"
+            type="button"
+          >
+            Missing Ingredients
+          </button>
+        </div>
+        {showPopup && (
+          <AlternativesPopup
+            missingIngredients={missingIngredients}
+            recipeTitle={recipe.title} // buradan başlık geçiyoruz!
+            onSuggestAlternatives={handleSuggestAlternatives}
+            onRemoveMissing={handleRemoveMissing}
+            onClose={() => setShowPopup(false)}
+          />
+        )}
 
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Ingredients</h2>
         <ul className="list-disc list-inside mb-8 text-gray-600 w-full space-y-2">
@@ -139,3 +183,4 @@ function RecipeDetail() {
 }
 
 export default RecipeDetail;
+

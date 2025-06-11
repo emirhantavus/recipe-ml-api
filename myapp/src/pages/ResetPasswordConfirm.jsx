@@ -3,27 +3,28 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function PasswordResetConfirm() {
+  //uidb64--user id (base64 ile şifrelenmiş)
   const { uidb64, token } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavigate();//başka bir sayfaya yönlendirme
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-
-  const handleSubmit = async (e) => {
+//e--kullancı formu göndernce oluşan olay
+  const handleSubmit = async (e) => {//handle-- form gönderilmesini sağlar
     e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
+    if (newPassword !== confirmPassword) {//2 şifre aynı değilse
       setError("Passwords do not match.");
       return;
     }
 
-    try {
+    try {// kullacının id ve token(şifre sıfırlama için anah)--backend gönderdiğimiz adres
       await axios.post(`/api/users/password-reset-confirm/${uidb64}/${token}/`, {
         password: newPassword,
       });
-      setSuccess(true);
+      setSuccess(true);//şifre değiştirildi mesajı
       setTimeout(() => navigate("/signin"), 2000); // 2 saniye sonra login sayfasına yönlendir
     } catch (err) {
       console.error(err);
@@ -42,7 +43,7 @@ function PasswordResetConfirm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 text-gray-700 font-semibold">New Password</label>
-            <input
+            <input //yeni şifre
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -56,7 +57,8 @@ function PasswordResetConfirm() {
             <input
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              //onChange-- input kutusunda bir değişiklik olunca çalışır.
+              onChange={(e) => setConfirmPassword(e.target.value)}// input yazılan değer
               required
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
