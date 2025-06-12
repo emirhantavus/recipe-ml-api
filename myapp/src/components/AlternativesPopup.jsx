@@ -1,15 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 
 function AlternativesPopup({
   missingIngredients,
   recipeTitle,
-  onSuggestAlternatives,
   onRemoveMissing,
   onClose,
+  recipeId,
 }) {
   const navigate = useNavigate();
+  const [alternatives, setAlternatives] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSuggestAlternatives = async () => {
+    setLoading(true);
+    try {
+      const res = await API.post("recipes/ingredient-alternative-llm/", {
+        ingredients: missingIngredients.map(item => item.ingredient_name),
+        recipe_id: recipeId,
+      });
+      setAlternatives(res.data.alternatives);
+    } catch (err) {
+      alert("Failed to fetch alternatives.");
+      setAlternatives(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoToShoppingList = async () => {
     if (!missingIngredients.length) return;
@@ -21,7 +39,6 @@ function AlternativesPopup({
       navigate("/shoppinglist");
     } catch (error) {
       alert("Failed to add to shopping list!");
-      console.error(error);
     }
   };
 
@@ -64,12 +81,12 @@ function AlternativesPopup({
         </button>
         <button
           className="bg-blue-400 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg border border-blue-500 flex items-center justify-center gap-2 disabled:opacity-50"
-          onClick={onSuggestAlternatives}
+          onClick={handleSuggestAlternatives}
           type="button"
-          disabled={missingIngredients.length === 0}
+          disabled={missingIngredients.length === 0 || loading}
         >
           <span role="img" aria-label="lightbulb">💡</span>
-          Suggest Alternatives
+          {loading ? "Suggesting..." : "Suggest Alternatives"}
         </button>
         <button
           className="mt-2 text-xs text-gray-400 hover:text-purple-700"
@@ -79,6 +96,30 @@ function AlternativesPopup({
           Close
         </button>
       </div>
+      {alternatives && (
+        <div className="mt-6">
+          <div className="font-semibold text-purple-700 mb-2">Alternative Suggestions</div>
+          <div>
+            {Object.entries(alternatives).map(([ingredient, alts]) => (
+              <div key={ingredient} className="mb-3">
+                <b className="text-sm">{ingredient}</b>
+                <ul className="list-disc list-inside text-gray-700 pl-4">
+                  {(typeof alts === "string" &&
+                    (
+                      alts.toLowerCase().includes("no suitable alternative") ||
+                      alts.toLowerCase().includes("no alternative")
+                    )
+                  )
+                    ? <li className="text-gray-400">{alts}</li>
+                    : alts.split(",").map((alt, i) => (
+                        <li key={i}>{alt.trim()}</li>
+                      ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

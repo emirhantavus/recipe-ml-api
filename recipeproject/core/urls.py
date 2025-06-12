@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (RecipeDetailAPIView,
                     GetIngredientsView,
                     FilteredRecipeListAPIView, MLRecipeRecommendationAPIView,
-                    UserShoppingListAPIView, ShoppingListDeleteAPIView)
+                    UserShoppingListAPIView, ShoppingListDeleteAPIView,
+                    IngredientAlternativeLLMView)
 
 urlpatterns = [
     #path('', RecipeListCreateAPIView.as_view(), name='recipe-list-create'),#yok
@@ -13,4 +14,5 @@ urlpatterns = [
     path("ml-recommend/", MLRecipeRecommendationAPIView.as_view(), name="ml-recommend"),
     path("shoppinglist/", UserShoppingListAPIView.as_view(), name="shoppinglist-list-create"),
     path("shoppinglist/<int:pk>/", ShoppingListDeleteAPIView.as_view(), name="shoppinglist-delete"),
+    path("ingredient-alternative-llm/", IngredientAlternativeLLMView.as_view(), name="ingredient-alternative-llm"),
 ]

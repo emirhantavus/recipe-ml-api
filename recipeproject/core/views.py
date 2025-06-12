@@ -14,6 +14,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 import os , pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from rest_framework.permissions import IsAuthenticated
+from .utils.openai_utils import get_ingredient_alternatives_llm
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -194,3 +195,34 @@ class ShoppingListDeleteAPIView(APIView):
             item.save()
             return Response({'message': 'Item updated'},status=status.HTTP_200_OK)
         return Response({'error':'missing field is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class IngredientAlternativeLLMView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        ingredients = request.data.get("ingredients")
+        recipe_id = request.data.get("recipe_id")
+        
+        if not ingredients or not recipe_id:
+            return Response({'error':'Ingredients and recipe are required'},status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            recipe = Recipe.objects.get(id=recipe_id)
+        except:
+            return Response({'error':'Recipe not found'},status=status.HTTP_404_NOT_FOUND)
+        
+        alternatives = {}
+        for ingredient in ingredients:
+            llm_response = get_ingredient_alternatives_llm(
+                ingredient,
+                recipe.title
+            )
+            
+            if "no suitable alternative exists" in llm_response.lower():
+                alternatives[ingredient] = "There is no suitable alternative for this ingredient."
+            else:
+                alternatives[ingredient] = llm_response.strip()
+        
+        return Response({'alternatives': alternatives}, status=status.HTTP_200_OK)
+            

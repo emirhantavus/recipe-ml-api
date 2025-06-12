@@ -15,14 +15,11 @@ function RecipeDetail() {
   const [missingIngredients, setMissingIngredients] = useState(
     missingIngredientsList.map(ingredient_name => ({ ingredient_name }))
   );
-
   const [recipe, setRecipe] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-
   const [showPopup, setShowPopup] = useState(false);
-  //const [cart, setCart] = useState([]);
 
   const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "");
 
@@ -33,22 +30,17 @@ function RecipeDetail() {
         setRecipe(res.data);
         setLoading(false);
       } catch (err) {
-        console.error("Could not fetch recipe:", err);
         setLoading(false);
       }
     };
-
     const checkIfFavorite = async () => {
       try {
         const res = await API.get("users/profile/");
         const favs = res.data.favorite_recipes || [];
         const exists = favs.some(r => r.id === parseInt(id));
         setIsFavorite(exists);
-      } catch (err) {
-        console.error("Could not check favorites:", err);
-      }
+      } catch (err) {}
     };
-
     fetchRecipe();
     checkIfFavorite();
   }, [id]);
@@ -59,18 +51,10 @@ function RecipeDetail() {
       setIsFavorite(prev => !prev);
       await API.post(`users/favorites/${id}/add/`);
     } catch (err) {
-      console.error("Error toggling favorite:", err);
       setIsFavorite(prev => !prev);
     } finally {
       setProcessing(false);
     }
-  };
-
-  const handleSuggestAlternatives = () => {
-    const altList = missingIngredients
-      .map(item => `${item.ingredient_name}: chia seeds (example)`)
-      .join("\n");
-    alert("Suggested alternatives:\n" + altList);
   };
 
   const handleRemoveMissing = (itemToRemove) => {
@@ -79,12 +63,9 @@ function RecipeDetail() {
     );
   };
 
-  
-
   if (loading) {
     return <div className="text-center mt-20 text-xl">Loading...</div>;
   }
-
   if (!recipe) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -122,7 +103,6 @@ function RecipeDetail() {
 
         <p className="text-gray-600 mb-8">{recipe.description}</p>
 
-        {/* Missing Ingredients Button & Popup */}
         <div className="w-full flex justify-end mb-4">
           <button
             onClick={() => setShowPopup(true)}
@@ -135,8 +115,8 @@ function RecipeDetail() {
         {showPopup && (
           <AlternativesPopup
             missingIngredients={missingIngredients}
-            recipeTitle={recipe.title} // buradan başlık geçiyoruz!
-            onSuggestAlternatives={handleSuggestAlternatives}
+            recipeTitle={recipe.title}
+            recipeId={recipe.id}
             onRemoveMissing={handleRemoveMissing}
             onClose={() => setShowPopup(false)}
           />
@@ -185,4 +165,3 @@ function RecipeDetail() {
 }
 
 export default RecipeDetail;
-

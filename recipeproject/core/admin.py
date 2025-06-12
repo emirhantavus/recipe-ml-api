@@ -3,7 +3,7 @@ from .models import Recipe, Ingredient, RecipeIngredient, IngredientAlternative
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ("title", "prep_time", "cook_time", "servings")
+    list_display = ("id","title", "prep_time", "cook_time", "servings")
     search_fields = ("title", "description")
     list_filter = ("prep_time", "cook_time")
     ordering = ("title",)
