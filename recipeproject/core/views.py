@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from .models import Recipe, RecipeIngredient ,Ingredient , IngredientAlternative #tüm modeller.
-from .serializers import RecipeSerializer, RecipeIngredientSerializer,IngredientSerializer # serializers
+from .models import Recipe, RecipeIngredient ,Ingredient , IngredientAlternative , ShoppingList
+from .serializers import RecipeSerializer, RecipeIngredientSerializer,IngredientSerializer , ShoppingListSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status , generics
@@ -13,6 +13,7 @@ from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 import os , pickle
 from sklearn.metrics.pairwise import cosine_similarity
+from rest_framework.permissions import IsAuthenticated
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -155,3 +156,41 @@ class MLRecipeRecommendationAPIView(APIView):
                 })
 
         return Response({"recommendations": results})
+    
+class UserShoppingListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        items = ShoppingList.objects.filter(user=request.user)
+        serializer = ShoppingListSerializer(items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = ShoppingListSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response({'message':'Ingredients added successfuly'},status=status.HTTP_201_CREATED)
+        return Response(serializer.errors)
+
+class ShoppingListDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        try:
+            item = ShoppingList.objects.get(pk=pk, user=request.user)
+        except ShoppingList.DoesNotExist:
+            return Response({'error':'Item not found'},status=status.HTTP_404_NOT_FOUND)
+        item.delete()
+        return Response({'message':'Item deleted succesfully'}, status=status.HTTP_204_NO_CONTENT)
+    
+    def patch(self, request, pk):
+        try:
+            item = ShoppingList.objects.get(pk=pk, user=request.user)
+        except ShoppingList.DoesNotExist:
+            return Response({'error':'Item not found'},status=status.HTTP_404_NOT_FOUND)
+        missing_ingredients = request.data.get("missing_ingredients")
+        if missing_ingredients is not None:
+            item.missing_ingredients = missing_ingredients
+            item.save()
+            return Response({'message': 'Item updated'},status=status.HTTP_200_OK)
+        return Response({'error':'missing field is required'}, status=status.HTTP_400_BAD_REQUEST)
