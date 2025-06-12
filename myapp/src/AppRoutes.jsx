@@ -12,6 +12,7 @@ import Recipes from "./pages/Recipes";
 import RecipeDetail from "./pages/RecipeDetail";
 import ResetPassword from "./pages/ResetPassword";
 import Favorites from "./pages/Favorites";
+import ShoppingListPage from "./pages/ShoppingList";
 
 function AppRoutes() {
   return (
@@ -28,6 +29,7 @@ function AppRoutes() {
           <Route path="/reset" element={<ResetPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/shoppinglist" element={<ShoppingListPage/>}/>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

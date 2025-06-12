@@ -29,7 +29,8 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
       
       
 class RegisterView(APIView):
-      def post(self, request):
+        permission_classes = [AllowAny,]
+        def post(self, request):
             serializer = RegisterSerializer(data = request.data)
             if serializer.is_valid():
                   serializer.save()

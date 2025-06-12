@@ -79,6 +79,8 @@ function RecipeDetail() {
     );
   };
 
+  
+
   if (loading) {
     return <div className="text-center mt-20 text-xl">Loading...</div>;
   }

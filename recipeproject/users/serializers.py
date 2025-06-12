@@ -15,7 +15,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'password2')
+        fields = ('email', 'username','password', 'password2')
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -38,10 +38,11 @@ class RecipeSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     favorite_recipes = RecipeSerializer(many=True, read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
     avatar = serializers.CharField(required=False, allow_blank=True)
     class Meta:
         model = Profile
-        fields = ('nickname', 'avatar', 'email', 'favorite_recipes')
+        fields = ('username', 'avatar', 'email', 'favorite_recipes')
 
     def update(self, instance, validated_data):
         avatar = validated_data.get("avatar", None)

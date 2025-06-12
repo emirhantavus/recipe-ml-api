@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Recipe , Ingredient, RecipeIngredient, IngredientAlternative
+from .models import Recipe , Ingredient, RecipeIngredient, IngredientAlternative, ShoppingList
 
 class IngredientSerializer(serializers.ModelSerializer):
       class Meta:
@@ -54,3 +54,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                   RecipeIngredient.objects.create(recipe=instance, ingredient=data['ingredient'],amount=data['amount'],unit=data['unit'])
                               
             return instance
+      
+class ShoppingListSerializer(serializers.ModelSerializer):
+      class Meta:
+            model = ShoppingList
+            fields = ('id', 'recipe_title', 'missing_ingredients', 'created_at')

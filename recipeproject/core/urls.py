@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (RecipeDetailAPIView,
                     GetIngredientsView,
-                    FilteredRecipeListAPIView, MLRecipeRecommendationAPIView)
+                    FilteredRecipeListAPIView, MLRecipeRecommendationAPIView,
+                    UserShoppingListAPIView, ShoppingListDeleteAPIView)
 
 urlpatterns = [
     #path('', RecipeListCreateAPIView.as_view(), name='recipe-list-create'),#yok
@@ -10,4 +11,6 @@ urlpatterns = [
     #path('find-recipes/', FindRecipesByIngredientsView.as_view(), name='find-recipe-ingredients'),#yok
     path('recipes/', FilteredRecipeListAPIView.as_view(), name='recipes-list'),
     path("ml-recommend/", MLRecipeRecommendationAPIView.as_view(), name="ml-recommend"),
+    path("shoppinglist/", UserShoppingListAPIView.as_view(), name="shoppinglist-list-create"),
+    path("shoppinglist/<int:pk>/", ShoppingListDeleteAPIView.as_view(), name="shoppinglist-delete"),
 ]

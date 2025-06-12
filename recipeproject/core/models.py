@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Recipe(models.Model):
       title = models.CharField(max_length=255, unique=True) 
@@ -65,3 +66,13 @@ class IngredientAlternative(models.Model):
       
       def __str__(self):
             return f"{self.alternative.name} can replace {self.original.name}"
+      
+      
+class ShoppingList(models.Model):
+      user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shopping_list')
+      recipe_title = models.CharField(max_length=200)
+      missing_ingredients = models.JSONField()
+      created_at = models.DateTimeField(auto_now_add=True)
+      
+      def __str__(self):
+            return f"{self.user.username } - {self.recipe_title}"

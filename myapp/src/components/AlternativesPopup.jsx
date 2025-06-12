@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../api/api";
 
 function AlternativesPopup({
   missingIngredients,
@@ -10,21 +11,18 @@ function AlternativesPopup({
 }) {
   const navigate = useNavigate();
 
-  const handleGoToShoppingList = () => {
-    const newEntry = {
-      recipe: recipeTitle,
-      items: missingIngredients.map(item => item.ingredient_name),
-    };
-    const list = JSON.parse(localStorage.getItem('shoppingList')) || [];
-    const index = list.findIndex(entry => entry.recipe === newEntry.recipe);
-    if (index !== -1) {
-      const combined = Array.from(new Set([...list[index].items, ...newEntry.items]));
-      list[index] = { recipe: recipeTitle, items: combined };
-    } else {
-      list.push(newEntry);
+  const handleGoToShoppingList = async () => {
+    if (!missingIngredients.length) return;
+    try {
+      await API.post("recipes/shoppinglist/", {
+        recipe_title: recipeTitle,
+        missing_ingredients: missingIngredients.map(item => item.ingredient_name),
+      });
+      navigate("/shoppinglist");
+    } catch (error) {
+      alert("Failed to add to shopping list!");
+      console.error(error);
     }
-    localStorage.setItem('shoppinglist', JSON.stringify(list));
-    navigate("/shoppinglist");
   };
 
   return (
@@ -86,4 +84,3 @@ function AlternativesPopup({
 }
 
 export default AlternativesPopup;
-
