@@ -1,33 +1,41 @@
 import { useState } from "react";
-import API from "../api/api"; 
+import API from "../api/api";
 import { Link } from "react-router-dom";
 
+const MEAL_TYPES = [
+  "Main",
+  "Dessert",
+  "Soup",
+  "Salad",
+  "Side",
+  "Breakfast"
+];
+
 function RecipeFinder() {
-  const [queryTitle, setQueryTitle] = useState("");
+  const [mealType, setMealType] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
 
   const addIngredient = (e) => {
-  e.preventDefault();
-  const newIngredients = input
-    .split(",")
-    .map(i => i.trim().toLowerCase())
-    .filter(Boolean)
-    .filter(i => !ingredients.includes(i));
+    e.preventDefault();
+    const newIngredients = input
+      .split(",")
+      .map(i => i.trim().toLowerCase())
+      .filter(Boolean)
+      .filter(i => !ingredients.includes(i));
 
-  if (newIngredients.length > 0) {
-    setIngredients([...ingredients, ...newIngredients]);
-    setInput("");
-  }
-};
+    if (newIngredients.length > 0) {
+      setIngredients([...ingredients, ...newIngredients]);
+      setInput("");
+    }
+  };
 
   const suggestRecipes = async () => {
     try {
       const res = await API.post("recipes/ml-recommend/", {
-        title: queryTitle,
-        ingredients,
-        alpha: 0.6,
+        meal_type: mealType,
+        ingredients
       });
       setResults(res.data.recommendations);
     } catch (err) {
@@ -41,14 +49,17 @@ function RecipeFinder() {
         <h1 className="text-3xl font-bold mb-6 text-center">AI-Based Recipe Finder</h1>
 
         <div className="mb-6">
-          <label className="block mb-2 font-semibold">Recipe Title (Optional)</label>
-          <input
-            type="text"
-            value={queryTitle}
-            onChange={(e) => setQueryTitle(e.target.value)}
+          <label className="block mb-2 font-semibold">Category (Meal Type)</label>
+          <select
+            value={mealType}
+            onChange={e => setMealType(e.target.value)}
             className="w-full p-2 border rounded focus:outline-none focus:border-purple-600"
-            placeholder="e.g. Pilaf, Soup..."
-          />
+          >
+            <option value="">Select category...</option>
+            {MEAL_TYPES.map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
         </div>
 
         <form onSubmit={addIngredient} className="flex space-x-2 mb-6">
@@ -78,7 +89,7 @@ function RecipeFinder() {
           )}
         </div>
 
-        {(ingredients.length > 0 || queryTitle.trim() !== "") && (
+        {(ingredients.length > 0 || mealType !== "") && (
           <button onClick={suggestRecipes} className="w-full bg-green-600 text-white py-2 rounded text-lg">
             Suggest Recipes
           </button>
@@ -86,7 +97,7 @@ function RecipeFinder() {
 
         <div className="mt-10 space-y-4">
           {results.map((rec) => {
-            // --- Güvenli missingIngredients arrayi ---
+            // Eksik malzemeleri güvenli şekilde array'e çevir
             const missingIngredientsArr = rec.missing_ingredients
               ? Array.isArray(rec.missing_ingredients)
                 ? rec.missing_ingredients
@@ -103,15 +114,15 @@ function RecipeFinder() {
                     <h3 className="text-xl font-bold">{rec.title}</h3>
                     <p className="text-sm text-gray-600">Ingredients: {rec.ingredients}</p>
                     {missingIngredientsArr.length > 0 && (
-                      <p className="text-sm text-red-600">
+                      <p className="text-sm font-bold text-red-600">
                         Missing: {missingIngredientsArr.join(", ")}
                       </p>
                     )}
                     <p className="text-sm text-gray-700">Score: {rec.score}</p>
                     {rec.id && (
                       <Link
-                        to={`/recipes/${rec.id}?missingIngredients=${missingIngredientsArr.join(",")}`}
-                        className="inline-block mt-2 text-purple-700 underline"
+                        to={`/recipes/${rec.id}?missingIngredients=${encodeURIComponent(missingIngredientsArr.join(","))}`}
+                        className="inline-block mt-2 text-purple-700 underline font-semibold"
                       >
                         View Recipe
                       </Link>

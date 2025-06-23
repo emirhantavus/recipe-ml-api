@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 
@@ -8,26 +8,11 @@ function AlternativesPopup({
   onRemoveMissing,
   onClose,
   recipeId,
+  alternatives,
+  altLoading,
+  onSuggestAlternatives
 }) {
   const navigate = useNavigate();
-  const [alternatives, setAlternatives] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSuggestAlternatives = async () => {
-    setLoading(true);
-    try {
-      const res = await API.post("recipes/ingredient-alternative-llm/", {
-        ingredients: missingIngredients.map(item => item.ingredient_name),
-        recipe_id: recipeId,
-      });
-      setAlternatives(res.data.alternatives);
-    } catch (err) {
-      alert("Failed to fetch alternatives.");
-      setAlternatives(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoToShoppingList = async () => {
     if (!missingIngredients.length) return;
@@ -81,12 +66,12 @@ function AlternativesPopup({
         </button>
         <button
           className="bg-blue-400 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg border border-blue-500 flex items-center justify-center gap-2 disabled:opacity-50"
-          onClick={handleSuggestAlternatives}
+          onClick={onSuggestAlternatives}
           type="button"
-          disabled={missingIngredients.length === 0 || loading}
+          disabled={missingIngredients.length === 0 || altLoading}
         >
           <span role="img" aria-label="lightbulb">💡</span>
-          {loading ? "Suggesting..." : "Suggest Alternatives"}
+          {altLoading ? "Suggesting..." : "Suggest Alternatives"}
         </button>
         <button
           className="mt-2 text-xs text-gray-400 hover:text-purple-700"

@@ -21,6 +21,9 @@ function RecipeDetail() {
   const [processing, setProcessing] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
 
+  const [alternatives, setAlternatives] = useState(null);
+  const [altLoading, setAltLoading] = useState(false);
+
   const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "");
 
   useEffect(() => {
@@ -61,6 +64,23 @@ function RecipeDetail() {
     setMissingIngredients((prev) =>
       prev.filter((item) => item.ingredient_name !== itemToRemove.ingredient_name)
     );
+    setAlternatives(null); // Seçili eksik malzeme değişince alternatifleri sıfırla
+  };
+
+  const handleSuggestAlternatives = async () => {
+    setAltLoading(true);
+    try {
+      const res = await API.post("recipes/ingredient-alternative-llm/", {
+        ingredients: missingIngredients.map(item => item.ingredient_name),
+        recipe_id: recipe.id,
+      });
+      setAlternatives(res.data.alternatives);
+    } catch (err) {
+      alert("Failed to fetch alternatives.");
+      setAlternatives(null);
+    } finally {
+      setAltLoading(false);
+    }
   };
 
   if (loading) {
@@ -119,6 +139,9 @@ function RecipeDetail() {
             recipeId={recipe.id}
             onRemoveMissing={handleRemoveMissing}
             onClose={() => setShowPopup(false)}
+            alternatives={alternatives}
+            altLoading={altLoading}
+            onSuggestAlternatives={handleSuggestAlternatives}
           />
         )}
 
