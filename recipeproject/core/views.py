@@ -12,6 +12,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from .utils.openai_utils import get_ingredient_alternatives_llm
 from .ml.ml_recommender import RecipeRecommender
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 recommender = RecipeRecommender()
 
@@ -77,8 +78,23 @@ class MLRecipeRecommendationAPIView(APIView):
 
         if not user_ingredients and not meal_type:
             return Response({"error": "At least ingredients or meal_type required."}, status=400)
+        
+        fav_ings = set()
+        last_ings = set()
+        if request.user.is_authenticated:
+            profile = request.user.profile
+            for r in profile.favorite_recipes.all():
+                fav_ings.update([i.ingredient.name.lower() for i in r.ingredients.all()])
+            for r in profile.last_viewed_recipes.all():
+                last_ings.update([i.ingredient.name.lower() for i in r.ingredients.all()])
 
-        results = recommender.recommend(user_ingredients, meal_type=meal_type,top_n=5)
+        results = recommender.recommend(
+            user_ingredients,
+            meal_type=meal_type,
+            top_n=5,
+            user_fav_ings= list(fav_ings),
+            user_last_ings = list(last_ings),
+            )
         return Response({"recommendations": results})
 
 
@@ -180,11 +196,13 @@ class RecipeReviewListCreateAPIView(APIView):
         serializer = RecipeViewSerializer(review)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
     
-class RecipeReviewDeleteAPIView(APIView):
+class RecipeReviewDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = RecipeReview.objects.all()
+    serializer_class = RecipeViewSerializer
     permission_classes = [IsAuthenticated]
-    
-    def delete(self, request, id):
-        recipe = get_object_or_404(Recipe, id = id)
-        review = get_object_or_404(RecipeReview, recipe=recipe, user=request.user)
-        review.delete()
-        return Response({'message':'Comment deleted.'},status=status.HTTP_204_NO_CONTENT)
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied("Bu yorumu düzenlemeye yetkiniz yok.")
+        return obj

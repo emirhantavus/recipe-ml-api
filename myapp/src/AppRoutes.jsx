@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext"; // Eğer yoksa eklemelisin
+import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
 import Profile from "./pages/Profile";
@@ -13,6 +13,7 @@ import RecipeDetail from "./pages/RecipeDetail";
 import ResetPassword from "./pages/ResetPassword";
 import Favorites from "./pages/Favorites";
 import ShoppingListPage from "./pages/ShoppingList";
+import LastVisit from "./pages/LastVisit";
 
 function AppRoutes() {
   return (
@@ -29,7 +30,8 @@ function AppRoutes() {
           <Route path="/reset" element={<ResetPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/favorites" element={<Favorites />} />
-          <Route path="/shoppinglist" element={<ShoppingListPage/>}/>
+          <Route path="/shoppinglist" element={<ShoppingListPage />} />
+          <Route path="/lastvisit" element={<LastVisit/>}/>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

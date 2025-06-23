@@ -37,12 +37,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     favorite_recipes = RecipeSerializer(many=True, read_only=True)
+    last_viewed_recipes = serializers.SerializerMethodField()
     email = serializers.EmailField(source='user.email', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     avatar = serializers.CharField(required=False, allow_blank=True)
+    
     class Meta:
         model = Profile
-        fields = ('username', 'avatar', 'email', 'favorite_recipes')
+        fields = ('username', 'avatar', 'email', 'favorite_recipes','last_viewed_recipes')
+        
+    def get_last_viewed_recipes(self,obj):
+        views = (obj.viewed_recipes_rel.order_by('-viewed_at')[:10])
+        return RecipeSerializer([v.recipe for v in views], many=True).data
 
     def update(self, instance, validated_data):
         avatar = validated_data.get("avatar", None)

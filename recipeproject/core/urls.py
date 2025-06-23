@@ -3,7 +3,7 @@ from .views import (RecipeDetailAPIView,
                     GetIngredientsView,
                     FilteredRecipeListAPIView, MLRecipeRecommendationAPIView,
                     UserShoppingListAPIView, ShoppingListDeleteAPIView,
-                    IngredientAlternativeLLMView, RecipeReviewListCreateAPIView, RecipeReviewDeleteAPIView)
+                    IngredientAlternativeLLMView, RecipeReviewListCreateAPIView, RecipeReviewDetailAPIView)
 
 urlpatterns = [
     path('<int:id>/', RecipeDetailAPIView.as_view(), name='recipe-detail'),
@@ -14,5 +14,5 @@ urlpatterns = [
     path("shoppinglist/<int:pk>/", ShoppingListDeleteAPIView.as_view(), name="shoppinglist-delete"),
     path("ingredient-alternative-llm/", IngredientAlternativeLLMView.as_view(), name="ingredient-alternative-llm"),
     path('<int:id>/reviews/', RecipeReviewListCreateAPIView.as_view(), name='recipe-review-list-create'),
-    path('<int:id>/reviews/delete/', RecipeReviewDeleteAPIView.as_view(), name='recipe-review-delete'),
+    path('reviews/<int:pk>/', RecipeReviewDetailAPIView.as_view(), name='review-detail'),
 ]

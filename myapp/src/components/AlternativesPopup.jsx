@@ -28,7 +28,7 @@ function AlternativesPopup({
   };
 
   return (
-    <div className="fixed top-24 right-8 z-50 bg-purple-50 border border-purple-200 rounded-2xl shadow-xl w-80 p-6 transition-all duration-300">
+    <div className="fixed top-24 right-8 z-50 bg-purple-50 border border-purple-200 rounded-2xl shadow-xl w-80 p-6 transition-all duration-300 max-h-[70vh] overflow-y-auto">
       <div className="font-bold text-purple-700 text-lg mb-3 text-center">
         Missing Ingredients
       </div>

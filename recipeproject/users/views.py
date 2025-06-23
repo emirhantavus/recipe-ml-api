@@ -6,7 +6,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny , IsAuthenticated
-from .serializers import RegisterSerializer , PasswordChangeSerializer ,PasswordResetConfirmSerializer , PasswordResetSerializer
+from .serializers import (
+    RegisterSerializer , PasswordChangeSerializer ,PasswordResetConfirmSerializer , PasswordResetSerializer,
+    ProfileSerializer,)
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.http import urlsafe_base64_encode , urlsafe_base64_decode
 from django.utils.encoding import force_bytes
@@ -16,7 +18,7 @@ from django.shortcuts import get_object_or_404
 from core.models import Recipe
 from core.serializers import RecipeSerializer
 from rest_framework import generics
-from .serializers import ProfileSerializer
+from .models import ProfileRecipeView
 
 User = get_user_model()
 
@@ -149,3 +151,24 @@ class ProfileAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RecipeVisitAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, id):
+        profile = request.user.profile
+        recipe = get_object_or_404(Recipe, id=id)
+        obj, created = ProfileRecipeView.objects.get_or_create(profile=profile, recipe=recipe)
+        obj.save()
+        return Response({"message":"Recipe visit recorded"}, status=status.HTTP_200_OK)
+    
+class LastViewedRecipesAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RecipeSerializer
+    
+    def get_queryset(self):
+        profile = self.request.user.profile
+        last_views = ProfileRecipeView.objects.filter(profile=profile).order_by('-viewed_at')[:10]
+        recipes = [v.recipe for v in last_views]
+        return recipes

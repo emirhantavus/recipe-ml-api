@@ -18,6 +18,8 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
             
             
 class RecipeViewSerializer(serializers.ModelSerializer):
+      user = serializers.SerializerMethodField()
+
       class Meta:
             model = RecipeReview
             fields = ('id','recipe','user','comment','rating','created_at')
@@ -27,6 +29,9 @@ class RecipeViewSerializer(serializers.ModelSerializer):
             user = self.context['request'].user
             recipe = self.context['recipe']
             return RecipeReview.objects.create(user=user, recipe=recipe, **validated_data)
+      
+      def get_user(self, obj):
+            return obj.user.username
       
             
 class RecipeSerializer(serializers.ModelSerializer):

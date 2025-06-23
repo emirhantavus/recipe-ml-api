@@ -64,6 +64,14 @@ function Navbar() {
             </Link>
 
             <Link
+              to="/lastvisit"
+              className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
+              title="View your favorite recipes"
+            >
+              Last Visit
+            </Link>
+
+            <Link
               to="/shoppinglist"
               className="hover:bg-indigo-500 px-3 py-1 rounded font-bold"
               title="View your shopping list"

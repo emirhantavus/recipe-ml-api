@@ -49,6 +49,27 @@ class Profile(models.Model):
       nickname = models.CharField(max_length=50, unique=True, blank=True, null=True)
       avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
       favorite_recipes = models.ManyToManyField(Recipe, blank=True, related_name="favorited_by")
+      
+      last_viewed_recipes = models.ManyToManyField(
+            Recipe,
+            through='ProfileRecipeView',
+            blank=True,
+            related_name="last_viewed_by"
+      )
          
       def __str__(self):
           return f"{self.user.email} - {self.nickname if self.nickname else 'No Nickname'}"
+    
+    
+    
+class ProfileRecipeView(models.Model):
+      profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="viewed_recipes_rel")
+      recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+      viewed_at = models.DateTimeField(auto_now=True)
+
+      class Meta:
+            unique_together = ("profile", "recipe")
+            ordering = ['-viewed_at']
+
+      def __str__(self):
+            return f"{self.profile.user.username} viewed {self.recipe.title} at {self.viewed_at}"
