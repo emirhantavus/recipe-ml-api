@@ -81,7 +81,7 @@ class RecipeFilter(django_filters.FilterSet):
         fields = ['diet_type', 'season', 'meal_type_fk']  # SADECE MODELDE OLANLAR!
 
 class FilteredRecipeListAPIView(generics.ListAPIView):
-    queryset = Recipe.objects.all().order_by('-created_at')
+    queryset = Recipe.objects.all().order_by('?')
     serializer_class = RecipeSerializer
     pagination_class = RecipePagination
 

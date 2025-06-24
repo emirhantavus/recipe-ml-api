@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import API from "../api/api";
 import { Link } from "react-router-dom";
 
-const MEAL_TYPES = [
-  "Main",
-  "Dessert",
-  "Soup",
-  "Salad",
-  "Side",
-  "Breakfast"
-];
-
 function RecipeFinder() {
+  const [mealTypes, setMealTypes] = useState([{ value: "", label: "All Meal Types" }]);
   const [mealType, setMealType] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
+
+  // Backend'den mealtype’ları çek (ilk yüklenince)
+  useEffect(() => {
+    API.get("recipes/mealtypes/").then(res => {
+      const opts = res.data.map(mt => ({
+        value: mt.id,   // burası id olacak!
+        label: mt.name
+      }));
+      setMealTypes([{ value: "", label: "All Meal Types" }, ...opts]);
+    });
+  }, []);
 
   const addIngredient = (e) => {
     e.preventDefault();
@@ -33,10 +36,12 @@ function RecipeFinder() {
 
   const suggestRecipes = async () => {
     try {
-      const res = await API.post("recipes/ml-recommend/", {
-        meal_type: mealType,
+      // meal_type boşsa göndermiyoruz, değilse id gönderiyoruz
+      const payload = {
         ingredients
-      });
+      };
+      if (mealType) payload.meal_type = mealType;
+      const res = await API.post("recipes/ml-recommend/", payload);
       setResults(res.data.recommendations);
     } catch (err) {
       console.error("API hatası:", err);
@@ -48,6 +53,7 @@ function RecipeFinder() {
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold mb-6 text-center">AI-Based Recipe Finder</h1>
 
+        {/* Category (Meal Type) */}
         <div className="mb-6">
           <label className="block mb-2 font-semibold">Category (Meal Type)</label>
           <select
@@ -55,13 +61,13 @@ function RecipeFinder() {
             onChange={e => setMealType(e.target.value)}
             className="w-full p-2 border rounded focus:outline-none focus:border-purple-600"
           >
-            <option value="">Select category...</option>
-            {MEAL_TYPES.map(type => (
-              <option key={type} value={type}>{type}</option>
+            {mealTypes.map(mt => (
+              <option key={mt.value} value={mt.value}>{mt.label}</option>
             ))}
           </select>
         </div>
 
+        {/* Ingredient input */}
         <form onSubmit={addIngredient} className="flex space-x-2 mb-6">
           <input
             type="text"
@@ -73,6 +79,7 @@ function RecipeFinder() {
           <button type="submit" className="bg-purple-600 text-white px-4 rounded">Add</button>
         </form>
 
+        {/* Ingredient list */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Ingredients:</h2>
           {ingredients.length === 0 ? (
@@ -95,9 +102,9 @@ function RecipeFinder() {
           </button>
         )}
 
+        {/* Results */}
         <div className="mt-10 space-y-4">
           {results.map((rec) => {
-            // Eksik malzemeleri güvenli şekilde array'e çevir
             const missingIngredientsArr = rec.missing_ingredients
               ? Array.isArray(rec.missing_ingredients)
                 ? rec.missing_ingredients
@@ -105,7 +112,6 @@ function RecipeFinder() {
                   ? rec.missing_ingredients.split(",").map(s => s.trim()).filter(Boolean)
                   : []
               : [];
-
             return (
               <div key={rec.title} className="bg-gray-100 p-4 rounded shadow">
                 <div className="flex gap-4 items-center">

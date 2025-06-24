@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import inflect
-from core.models import Recipe
+from core.models import Recipe , MealType
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -35,7 +35,16 @@ class RecipeRecommender:
 
         df_filtered = self.df
         matrix_filtered = self.ingredient_matrix
+        
         if meal_type:
+            if str(meal_type).isdigit():
+                try:
+                    mt_obj = MealType.objects.get(id=int(meal_type))
+                    meal_type_name = mt_obj.lower()
+                except MealType.DoesNotExist:
+                    return []
+            else:
+                meal_type_name = str(meal_type).lower()
             idxs = self.df[self.df["meal_type"].str.lower() == meal_type.lower()].index
             if len(idxs) == 0:
                 return []

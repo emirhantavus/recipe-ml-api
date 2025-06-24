@@ -12,23 +12,14 @@ export default function Recipes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [mealOptions, setMealOptions] = useState([{ value: "", label: "All Meal Types" }]);
+
   const dietOptions = [
-    { value: "", label: "All" },
+    { value: "", label: "All Diet Types" },
     { value: "regular", label: "Regular" },
     { value: "vegetarian", label: "Vegetarian" },
     { value: "vegan", label: "Vegan" },
     { value: "gluten_free", label: "Gluten Free" },
-    
-  ];
-
-  const mealOptions = [
-    { value: "", label: "All" },
-    { value: "main", label: "Main Course" },
-    { value: "dessert", label: "Dessert" },
-    { value: "soup", label: "Soup" },
-    { value: "salad", label: "Salad" },
-    { value: "side", label: "Side Dish" },
-    { value: "breakfast", label: "Breakfast" },
   ];
 
   const seasonOptions = [
@@ -39,35 +30,45 @@ export default function Recipes() {
     { value: "winter", label: "Winter" },
   ];
 
-  const fetchRecipes = useCallback(() => {//usecallback---fobk sadece bağımlılıklar değiştirirse baştan oluşturur
+  // Dinamik MealType çekme
+  useEffect(() => {
+    API.get("recipes/mealtypes/").then(res => {
+      const mealTypeOpts = res.data.map(mt => ({
+        value: mt.id,
+        label: mt.name
+      }));
+      setMealOptions([{ value: "", label: "All Meal Types" }, ...mealTypeOpts]);
+    });
+  }, []);
+
+  const fetchRecipes = useCallback(() => {
     setLoading(true);
     API.get("recipes/recipes/", {
-      params: {//Apı gönderilen parametreler
+      params: {
         page: currentPage,
         page_size: 12,
         ordering: "-created_at",
         search: search || undefined,
         diet_type: dietFilter || undefined,
-        meal_type: mealFilter || undefined,
+        meal_type_fk: mealFilter || undefined, // id gönderiyor!
         season: seasonFilter || undefined,
       },
     })
-      .then((res) => {//istek başarılı ise
+      .then((res) => {
         setRecipes(res.data.results);
-        setTotalPages(Math.ceil(res.data.count / 12));//Toplam sayfa sayısını state kaydeder
+        setTotalPages(Math.ceil(res.data.count / 12));
       })
       .catch((err) => console.error("Tarifler alınamadı:", err))
       .finally(() => setLoading(false));
   }, [search, dietFilter, mealFilter, seasonFilter, currentPage]);
-  //bağıımlılık dizisi(bunlardan biri değişirse ilgili fonk tekrar çalışır--usecallback sayesinde)
 
   useEffect(() => {
     fetchRecipes();
-  }, [fetchRecipes]);// fetch recipe değişirse useEffect çalışsın.Yani tarfileri tekrar backend çeker
+  }, [fetchRecipes]);
 
-  const handlePageChange = (newPage) => {// kullanıcının gitmek istediği sayfa
+  const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);//yeni sayfa numarası
+      setCurrentPage(newPage);
     }
   };
 
