@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .models import Recipe, RecipeIngredient ,Ingredient , IngredientAlternative , ShoppingList, RecipeReview
-from .serializers import (RecipeSerializer, RecipeIngredientSerializer,IngredientSerializer ,
-                          ShoppingListSerializer, RecipeViewSerializer)
+from .models import Recipe ,Ingredient , ShoppingList, RecipeReview , MealType
+from .serializers import (RecipeSerializer,IngredientSerializer ,
+                          ShoppingListSerializer, RecipeViewSerializer, MealTypeSerailizer)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status , generics
@@ -9,10 +9,12 @@ from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated , AllowAny
 from .utils.openai_utils import get_ingredient_alternatives_llm
 from .ml.ml_recommender import RecipeRecommender
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
 
 recommender = RecipeRecommender()
 
@@ -58,17 +60,37 @@ class GetIngredientsView(APIView):
             return Response({'error':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
       
       
-class FilteredRecipeListAPIView(generics.ListAPIView):
-      queryset = Recipe.objects.all().order_by('-created_at')
-      serializer_class = RecipeSerializer
-      pagination_class = RecipePagination
+# class FilteredRecipeListAPIView(generics.ListAPIView):
+#       queryset = Recipe.objects.all().order_by('-created_at')
+#       serializer_class = RecipeSerializer
+#       pagination_class = RecipePagination
 
-      filter_backends = [DjangoFilterBackend, SearchFilter]
-      filterset_fields = ['diet_type', 'meal_type', 'season']
-      search_fields    = ['title']
+#       filter_backends = [DjangoFilterBackend, SearchFilter]
+#       filterset_fields = ['diet_type', 'meal_type', 'season']
+#       search_fields    = ['title']
     
-      def get_serializer_context(self):
-            return {'request':self.request}
+#       def get_serializer_context(self):
+#             return {'request':self.request}
+
+class RecipeFilter(django_filters.FilterSet):
+    # Eğer meal_type ismiyle arama da istersen bu satırı EKLE ama FIELDS'a YAZMA!
+    # meal_type_name = django_filters.CharFilter(field_name="meal_type__name", lookup_expr="iexact")
+
+    class Meta:
+        model = Recipe
+        fields = ['diet_type', 'season', 'meal_type_fk']  # SADECE MODELDE OLANLAR!
+
+class FilteredRecipeListAPIView(generics.ListAPIView):
+    queryset = Recipe.objects.all().order_by('-created_at')
+    serializer_class = RecipeSerializer
+    pagination_class = RecipePagination
+
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = RecipeFilter
+    search_fields = ['title']
+
+    def get_serializer_context(self):
+        return {'request': self.request}
       
       
 class MLRecipeRecommendationAPIView(APIView):
@@ -146,15 +168,19 @@ class IngredientAlternativeLLMView(APIView):
         recipe_id = request.data.get("recipe_id")
         
         if not ingredients or not recipe_id:
-            return Response({'error':'Ingredients and recipe are required'},status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Ingredients and recipe are required'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             recipe = Recipe.objects.get(id=recipe_id)
         except:
-            return Response({'error':'Recipe not found'},status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Recipe not found'}, status=status.HTTP_404_NOT_FOUND)
         
         alternatives = {}
         for ingredient in ingredients:
+            if ingredient.strip().lower() in {"water"}:
+                alternatives[ingredient] = "No alternative needed for water."
+                continue
+            
             llm_response = get_ingredient_alternatives_llm(
                 ingredient,
                 recipe.title
@@ -166,6 +192,7 @@ class IngredientAlternativeLLMView(APIView):
                 alternatives[ingredient] = llm_response.strip()
         
         return Response({'alternatives': alternatives}, status=status.HTTP_200_OK)
+
 
 
 class RecipeReviewListCreateAPIView(APIView):
@@ -206,3 +233,12 @@ class RecipeReviewDetailAPIView(RetrieveUpdateDestroyAPIView):
         if obj.user != self.request.user:
             raise PermissionDenied("Bu yorumu düzenlemeye yetkiniz yok.")
         return obj
+
+
+class MealTypeAPIView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self,request):
+        mt = MealType.objects.all()
+        serializer = MealTypeSerailizer(mt,many=True)
+        return Response(serializer.data)

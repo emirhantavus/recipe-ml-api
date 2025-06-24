@@ -50,11 +50,15 @@ class RecipeRecommender:
         sim = cosine_similarity(vec, matrix_filtered).flatten()
 
         results = []
+        IGNORE_INGREDIENTS = {"water"}
         for i in sim.argsort()[-top_n*2:][::-1]:
             rec = df_filtered.iloc[i]
             recipe_ingredients = [self.normalize_ingredient(x.strip()) for x in str(rec["ingredients"]).split(",")]
             matched = set(user_ingredients).intersection(set(recipe_ingredients))
-            missing = list(set(recipe_ingredients) - set(user_ingredients))
+            missing = [
+                 ing for ing in (set(recipe_ingredients) - set(user_ingredients))
+                if ing not in IGNORE_INGREDIENTS
+            ]
             overlap_ratio = len(matched) / len(recipe_ingredients) if recipe_ingredients else 0
 
             fav_intersection = set(recipe_ingredients) & user_fav_ings

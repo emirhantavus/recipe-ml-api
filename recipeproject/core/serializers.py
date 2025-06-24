@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Recipe , Ingredient, RecipeIngredient, ShoppingList, RecipeReview
+from .models import Recipe , Ingredient, RecipeIngredient, ShoppingList, RecipeReview, MealType
 from django.db.models import Avg
 
 
@@ -39,7 +39,7 @@ class RecipeSerializer(serializers.ModelSerializer):
       ingredient_name = serializers.CharField(source="ingredient.name", read_only=True)
       image = serializers.ImageField(required=False, allow_null=True,use_url=True)
       diet_type = serializers.ChoiceField(choices=Recipe.DIET_CHOICES, default='regular')
-      meal_type = serializers.ChoiceField(choices=Recipe.MEAL_CHOICES, default='main')
+      meal_type = serializers.PrimaryKeyRelatedField(queryset=MealType.objects.all(), source='meal_type_fk')
       season = serializers.ChoiceField(choices=Recipe.SEASON_CHOICES, default='all')
       reviews = RecipeViewSerializer(many=True, read_only=True)
       average_rating = serializers.SerializerMethodField()
@@ -90,4 +90,8 @@ class ShoppingListSerializer(serializers.ModelSerializer):
       class Meta:
             model = ShoppingList
             fields = ('id', 'recipe_title', 'missing_ingredients', 'created_at')
-            
+
+class MealTypeSerailizer(serializers.ModelSerializer):
+      class Meta:
+            model = MealType
+            fields = ('id','name')

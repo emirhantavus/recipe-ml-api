@@ -3,7 +3,7 @@ from .views import (RecipeDetailAPIView,
                     GetIngredientsView,
                     FilteredRecipeListAPIView, MLRecipeRecommendationAPIView,
                     UserShoppingListAPIView, ShoppingListDeleteAPIView,
-                    IngredientAlternativeLLMView, RecipeReviewListCreateAPIView, RecipeReviewDetailAPIView)
+                    IngredientAlternativeLLMView, RecipeReviewListCreateAPIView, RecipeReviewDetailAPIView, MealTypeAPIView)
 
 urlpatterns = [
     path('<int:id>/', RecipeDetailAPIView.as_view(), name='recipe-detail'),
@@ -15,4 +15,5 @@ urlpatterns = [
     path("ingredient-alternative-llm/", IngredientAlternativeLLMView.as_view(), name="ingredient-alternative-llm"),
     path('<int:id>/reviews/', RecipeReviewListCreateAPIView.as_view(), name='recipe-review-list-create'),
     path('reviews/<int:pk>/', RecipeReviewDetailAPIView.as_view(), name='review-detail'),
+    path('mealtypes/', MealTypeAPIView.as_view(), name='meal-type'),
 ]
