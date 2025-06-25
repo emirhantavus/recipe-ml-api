@@ -8,12 +8,12 @@ function RecipeFinder() {
   const [ingredients, setIngredients] = useState([]);
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
+  const API_BASE = "http://localhost:8000";
 
-  // Backend'den mealtype’ları çek (ilk yüklenince)
   useEffect(() => {
     API.get("recipes/mealtypes/").then(res => {
       const opts = res.data.map(mt => ({
-        value: mt.id,   // burası id olacak!
+        value: mt.id,
         label: mt.name
       }));
       setMealTypes([{ value: "", label: "All Meal Types" }, ...opts]);
@@ -27,7 +27,6 @@ function RecipeFinder() {
       .map(i => i.trim().toLowerCase())
       .filter(Boolean)
       .filter(i => !ingredients.includes(i));
-
     if (newIngredients.length > 0) {
       setIngredients([...ingredients, ...newIngredients]);
       setInput("");
@@ -35,25 +34,29 @@ function RecipeFinder() {
   };
 
   const suggestRecipes = async () => {
+    if (ingredients.length < 3) return;
     try {
-      // meal_type boşsa göndermiyoruz, değilse id gönderiyoruz
-      const payload = {
-        ingredients
-      };
+      const payload = { ingredients };
       if (mealType) payload.meal_type = mealType;
       const res = await API.post("recipes/ml-recommend/", payload);
       setResults(res.data.recommendations);
     } catch (err) {
-      console.error("API hatası:", err);
+      console.error("API error:", err);
     }
   };
+
+  function getImageUrl(img) {
+    if (!img) return null;
+    if (img.startsWith("http")) return img;
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#c1c7f7] to-white py-12 px-6">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold mb-6 text-center">AI-Based Recipe Finder</h1>
 
-        {/* Category (Meal Type) */}
         <div className="mb-6">
           <label className="block mb-2 font-semibold">Category (Meal Type)</label>
           <select
@@ -67,7 +70,6 @@ function RecipeFinder() {
           </select>
         </div>
 
-        {/* Ingredient input */}
         <form onSubmit={addIngredient} className="flex space-x-2 mb-6">
           <input
             type="text"
@@ -79,7 +81,6 @@ function RecipeFinder() {
           <button type="submit" className="bg-purple-600 text-white px-4 rounded">Add</button>
         </form>
 
-        {/* Ingredient list */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Ingredients:</h2>
           {ingredients.length === 0 ? (
@@ -96,13 +97,21 @@ function RecipeFinder() {
           )}
         </div>
 
-        {(ingredients.length > 0 || mealType !== "") && (
-          <button onClick={suggestRecipes} className="w-full bg-green-600 text-white py-2 rounded text-lg">
-            Suggest Recipes
-          </button>
+        <button
+          onClick={suggestRecipes}
+          className="w-full bg-green-600 text-white py-2 rounded text-lg"
+          disabled={ingredients.length < 3}
+          style={{ opacity: ingredients.length < 3 ? 0.5 : 1 }}
+        >
+          Suggest Recipes
+        </button>
+        
+        {ingredients.length < 3 && (
+          <div className="text-red-600 font-bold mt-2 text-center">
+            Please enter at least 3 ingredients to get recipe suggestions.
+          </div>
         )}
 
-        {/* Results */}
         <div className="mt-10 space-y-4">
           {results.map((rec) => {
             const missingIngredientsArr = rec.missing_ingredients
@@ -112,10 +121,14 @@ function RecipeFinder() {
                   ? rec.missing_ingredients.split(",").map(s => s.trim()).filter(Boolean)
                   : []
               : [];
+            const imageUrl = getImageUrl(rec.image);
+
             return (
               <div key={rec.title} className="bg-gray-100 p-4 rounded shadow">
                 <div className="flex gap-4 items-center">
-                  <img src={rec.image || "/assets/default.jpg"} alt={rec.title} className="w-24 h-24 object-cover rounded" />
+                  {imageUrl && (
+                    <img src={imageUrl} alt={rec.title} className="w-24 h-24 object-cover rounded" />
+                  )}
                   <div>
                     <h3 className="text-xl font-bold">{rec.title}</h3>
                     <p className="text-sm text-gray-600">Ingredients: {rec.ingredients}</p>

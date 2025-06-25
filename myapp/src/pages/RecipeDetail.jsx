@@ -1,7 +1,6 @@
 import { useParams, Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../api/api";
-import AlternativesPopup from "../components/AlternativesPopup";
 
 function RecipeDetail() {
   const { id } = useParams();
@@ -15,33 +14,29 @@ function RecipeDetail() {
   const [missingIngredients, setMissingIngredients] = useState(
     missingIngredientsList.map(ingredient_name => ({ ingredient_name }))
   );
+  const [alternatives, setAlternatives] = useState(null);
+  const [altLoading, setAltLoading] = useState(false);
+
   const [recipe, setRecipe] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-  const [alternatives, setAlternatives] = useState(null);
-  const [altLoading, setAltLoading] = useState(false);
 
-  // Yorum yapma
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [newRating, setNewRating] = useState(5);
+  const [newRating, setNewRating] = useState("");
   const [sending, setSending] = useState(false);
   const [commentError, setCommentError] = useState("");
 
-  // Kullanıcı ve edit state
   const [currentUser, setCurrentUser] = useState(null);
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [editingComment, setEditingComment] = useState("");
-  const [editingRating, setEditingRating] = useState(5);
+  const [editingRating, setEditingRating] = useState("");
 
   const apiHost = API.defaults.baseURL.replace(/\/api\/$/, "");
 
   useEffect(() => {
-
     API.post(`users/${id}/visit/`).catch(() => { });
-    
     const fetchRecipe = async () => {
       try {
         const res = await API.get(`recipes/${id}/`);
@@ -62,13 +57,35 @@ function RecipeDetail() {
     const fetchUser = async () => {
       try {
         const res = await API.get("users/profile/");
-        setCurrentUser(res.data.username); // username veya id dönen key
+        setCurrentUser(res.data.username);
       } catch (err) {}
     };
     fetchRecipe();
     checkIfFavorite();
     fetchUser();
   }, [id]);
+
+  // Eksik malzemeler varsa, alternatifleri otomatik getir
+  useEffect(() => {
+    const fetchAlternatives = async () => {
+      if (missingIngredients.length > 0) {
+        setAltLoading(true);
+        try {
+          const res = await API.post("recipes/ingredient-alternative-llm/", {
+            ingredients: missingIngredients.map(item => item.ingredient_name),
+            recipe_id: id,
+          });
+          setAlternatives(res.data.alternatives);
+        } catch (err) {
+          setAlternatives(null);
+        } finally {
+          setAltLoading(false);
+        }
+      }
+    };
+    fetchAlternatives();
+    // eslint-disable-next-line
+  }, [missingIngredients, id]);
 
   const handleToggleFavorite = async () => {
     setProcessing(true);
@@ -82,29 +99,19 @@ function RecipeDetail() {
     }
   };
 
-  const handleRemoveMissing = (itemToRemove) => {
-    setMissingIngredients((prev) =>
-      prev.filter((item) => item.ingredient_name !== itemToRemove.ingredient_name)
-    );
-    setAlternatives(null);
-  };
-
-  const handleSuggestAlternatives = async () => {
-    setAltLoading(true);
+  const handleGoToShoppingList = async () => {
+    if (!missingIngredients.length) return;
     try {
-      const res = await API.post("recipes/ingredient-alternative-llm/", {
-        ingredients: missingIngredients.map(item => item.ingredient_name),
-        recipe_id: recipe.id,
+      await API.post("recipes/shoppinglist/", {
+        recipe_title: recipe.title,
+        missing_ingredients: missingIngredients.map(item => item.ingredient_name),
       });
-      setAlternatives(res.data.alternatives);
-    } catch (err) {
-      setAlternatives(null);
-    } finally {
-      setAltLoading(false);
+      window.location.href = "/shoppinglist";
+    } catch (error) {
+      alert("Failed to add to shopping list!");
     }
   };
 
-  // Yorum ekleme
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     setSending(true);
@@ -112,45 +119,41 @@ function RecipeDetail() {
     try {
       await API.post(`recipes/${id}/reviews/`, {
         comment: newComment,
-        rating: newRating,
+        rating: newRating !== "" ? newRating : null,
       });
       const res = await API.get(`recipes/${id}/`);
       setRecipe(res.data);
-      setNewComment("");
-      setNewRating(5);
       setShowCommentBox(false);
     } catch (err) {
-      setCommentError("Failed to submit comment.");
+      setCommentError("Failed to submit comment or rating.");
     } finally {
       setSending(false);
     }
   };
 
-  // Yorum güncelleme
   const handleUpdateReview = async (reviewId) => {
     try {
       await API.put(`recipes/reviews/${reviewId}/`, {
         comment: editingComment,
-        rating: editingRating,
+        rating: editingRating !== "" ? editingRating : null,
       });
       const res = await API.get(`recipes/${id}/`);
       setRecipe(res.data);
       setEditingReviewId(null);
     } catch (err) {
-      alert("Yorum güncellenemedi!");
+      alert("Comment isn't updated");
     }
   };
 
-  // Yorum silme (opsiyonel)
   const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm("Yorumu silmek istediğine emin misin?")) return;
+    if (!window.confirm("Are you sure you wanna delete")) return;
     try {
       await API.delete(`recipes/reviews/${reviewId}/`);
       const res = await API.get(`recipes/${id}/`);
       setRecipe(res.data);
       setEditingReviewId(null);
     } catch (err) {
-      alert("Yorum silinemedi!");
+      alert("Comment not deleted!");
     }
   };
 
@@ -176,8 +179,9 @@ function RecipeDetail() {
     : "/assets/default.jpg";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#c1c7f7] to-white py-12 px-6">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-b from-[#c1c7f7] to-white py-12 px-6 flex flex-col md:flex-row gap-8">
+      {/* SOL ANA BLOK */}
+      <div className="max-w-3xl w-full bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
         <img
           src={imageUrl}
           alt={recipe.title}
@@ -193,30 +197,6 @@ function RecipeDetail() {
         </div>
 
         <p className="text-gray-600 mb-8">{recipe.description}</p>
-
-        {missingIngredients.length > 0 && (
-          <div className="w-full flex justify-end mb-4">
-            <button
-              onClick={() => setShowPopup(true)}
-              className="bg-blue-100 hover:bg-blue-200 text-blue-900 px-4 py-2 rounded-lg shadow font-semibold transition"
-              type="button"
-            >
-              Missing Ingredients
-            </button>
-          </div>
-        )}
-        {showPopup && missingIngredients.length > 0 && (
-          <AlternativesPopup
-            missingIngredients={missingIngredients}
-            recipeTitle={recipe.title}
-            recipeId={recipe.id}
-            onRemoveMissing={handleRemoveMissing}
-            onClose={() => setShowPopup(false)}
-            alternatives={alternatives}
-            altLoading={altLoading}
-            onSuggestAlternatives={handleSuggestAlternatives}
-          />
-        )}
 
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Ingredients</h2>
         <ul className="list-disc list-inside mb-8 text-gray-600 w-full space-y-2">
@@ -256,7 +236,6 @@ function RecipeDetail() {
           </button>
         </div>
 
-        {/* Yorumlar */}
         <div className="w-full mt-12">
           <h2 className="text-2xl font-bold text-purple-700 mb-4">Comments & Ratings</h2>
           <div className="flex items-center gap-4 mb-4">
@@ -266,33 +245,31 @@ function RecipeDetail() {
             <span className="text-gray-500">({recipe.review_count || 0} reviews)</span>
           </div>
 
-          {/* Yorum yap butonu */}
           <button
             className="mb-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
             onClick={() => setShowCommentBox((prev) => !prev)}
           >
-            {showCommentBox ? "Kapat" : "Yorum Yap"}
+            {showCommentBox ? "Close" : "Comment/Rate"}
           </button>
 
-          {/* Yorum formu */}
           {showCommentBox && (
             <form onSubmit={handleSubmitComment} className="mb-8 flex flex-col gap-3">
               <textarea
                 value={newComment}
                 onChange={e => setNewComment(e.target.value)}
                 className="w-full p-2 border rounded min-h-[60px] resize-y"
-                placeholder="Add your comment..."
-                required
+                placeholder="Add your comment (optional)"
                 disabled={sending}
               />
               <div className="flex items-center gap-4">
                 <label className="font-semibold text-gray-700">Your Rating:</label>
                 <select
                   value={newRating}
-                  onChange={e => setNewRating(Number(e.target.value))}
+                  onChange={e => setNewRating(e.target.value)}
                   className="p-1 border rounded"
                   disabled={sending}
                 >
+                  <option value="">Seçiniz</option>
                   {[5, 4, 3, 2, 1].map(val => (
                     <option key={val} value={val}>{val}</option>
                   ))}
@@ -300,7 +277,7 @@ function RecipeDetail() {
                 <button
                   type="submit"
                   className="ml-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-                  disabled={sending || !newComment}
+                  disabled={sending || (!newComment && newRating === "")}
                 >
                   {sending ? "Sending..." : "Send"}
                 </button>
@@ -309,21 +286,19 @@ function RecipeDetail() {
             </form>
           )}
 
-          {/* Yorumlar listesi */}
           <div className="space-y-4">
-            {recipe.reviews && recipe.reviews.length > 0 ? (
-              recipe.reviews.map((r) => (
+            {recipe.reviews && recipe.reviews.filter(r => r.comment && r.comment.trim() !== "").length > 0 ? (
+              recipe.reviews.filter(r => r.comment && r.comment.trim() !== "").map((r) => (
                 <div
                   key={r.id}
                   className="bg-gray-50 p-4 rounded-lg shadow flex flex-col gap-2 group relative"
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-purple-800">{r.user}</span>
-                    <span className="text-yellow-500">★ {r.rating}</span>
+                    {r.rating && <span className="text-yellow-500">★ {r.rating}</span>}
                     <span className="text-gray-400 text-xs ml-auto">
                       {new Date(r.created_at).toLocaleString()}
                     </span>
-                    {/* Sadece kendi yorumunda düzenle/sil göster */}
                     {currentUser === r.user && (
                       <>
                         <button
@@ -331,7 +306,7 @@ function RecipeDetail() {
                           onClick={() => {
                             setEditingReviewId(r.id);
                             setEditingComment(r.comment);
-                            setEditingRating(r.rating);
+                            setEditingRating(r.rating !== null ? r.rating : "");
                           }}
                         >
                           Düzenle
@@ -357,13 +332,13 @@ function RecipeDetail() {
                         value={editingComment}
                         onChange={e => setEditingComment(e.target.value)}
                         className="w-full p-2 border rounded min-h-[60px] resize-y"
-                        required
                       />
                       <select
                         value={editingRating}
-                        onChange={e => setEditingRating(Number(e.target.value))}
+                        onChange={e => setEditingRating(e.target.value)}
                         className="p-1 border rounded w-24"
                       >
+                        <option value="">Seçiniz</option>
                         {[5, 4, 3, 2, 1].map(val => (
                           <option key={val} value={val}>{val}</option>
                         ))}
@@ -395,6 +370,58 @@ function RecipeDetail() {
           </div>
         </div>
       </div>
+
+      {/* SAĞ SABİT ALTERNATİF KUTUSU */}
+      {missingIngredients.length > 0 && (
+        <div className="md:sticky md:top-24 md:self-start w-full md:w-96 bg-purple-50 border border-purple-200 rounded-2xl shadow-xl p-6 h-fit flex flex-col gap-2">
+          <div className="font-bold text-purple-700 text-xl mb-2 text-center">
+            Missing Ingredients
+          </div>
+          <ul>
+            {missingIngredients.map((item) => (
+              <li
+                key={item.ingredient_name}
+                className="flex justify-between items-center mb-3 bg-white/80 rounded-lg px-3 py-2 shadow-sm"
+              >
+                <span className="text-purple-700">{item.ingredient_name}</span>
+              </li>
+            ))}
+          </ul>
+          {altLoading ? (
+            <div className="text-center text-gray-400 py-2">Loading suggestions...</div>
+          ) : alternatives && (
+            <div className="mt-4">
+              <div className="font-semibold text-purple-700 mb-2">Alternative Suggestions</div>
+              {Object.entries(alternatives).map(([ingredient, alts]) => (
+                <div key={ingredient} className="mb-3">
+                  <b className="text-sm">{ingredient}</b>
+                  <ul className="list-disc list-inside text-gray-700 pl-4">
+                    {(typeof alts === "string" &&
+                      (
+                        alts.toLowerCase().includes("no suitable alternative") ||
+                        alts.toLowerCase().includes("no alternative")
+                      )
+                    )
+                      ? <li className="text-gray-400">{alts}</li>
+                      : alts.split(",").map((alt, i) => (
+                          <li key={i}>{alt.trim()}</li>
+                        ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            className="mt-3 bg-green-400 hover:bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg border border-green-500 flex items-center justify-center gap-2 disabled:opacity-50"
+            onClick={handleGoToShoppingList}
+            type="button"
+            disabled={missingIngredients.length === 0}
+          >
+            <span role="img" aria-label="shopping cart">🛒</span>
+            Add All to Shopping List
+          </button>
+        </div>
+      )}
     </div>
   );
 }
