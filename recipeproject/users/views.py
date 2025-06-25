@@ -19,6 +19,10 @@ from core.models import Recipe
 from core.serializers import RecipeSerializer
 from rest_framework import generics
 from .models import ProfileRecipeView
+import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from rest_framework.pagination import PageNumberPagination
 
 User = get_user_model()
 
@@ -26,7 +30,7 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
       @classmethod
       def get_token(cls, user):
             token = super().get_token(user)
-            token['user_id'] = user.id # kalsın sonra bakılır.
+            token['user_id'] = user.id
             return token
       
       
@@ -128,13 +132,27 @@ class AddFavoriteRecipeAPIView(APIView):
             profile.favorite_recipes.add(recipe)
             return Response({"message":"Added to favorites"},status=status.HTTP_200_OK)
         
+class RecipePagination(PageNumberPagination):
+      page_size = 12
+      page_size_query_param = 'page_size'
+      max_page_size = 100
+        
+class FavoriteRecipeFilter(django_filters.FilterSet):
+    class Meta:
+        model = Recipe
+        fields = ['diet_type', 'season', 'meal_type_fk']
+        
 class FavoriteListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RecipeSerializer
-    
+    pagination_class = RecipePagination  # Bunu ekle (aynı recipes için)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = FavoriteRecipeFilter
+    search_fields = ['title']
+
     def get_queryset(self):
         profile = self.request.user.profile
-        return profile.favorite_recipes.all()
+        return profile.favorite_recipes.all().order_by('-created_at')
     
 class ProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]

@@ -73,12 +73,9 @@ class GetIngredientsView(APIView):
 #             return {'request':self.request}
 
 class RecipeFilter(django_filters.FilterSet):
-    # Eğer meal_type ismiyle arama da istersen bu satırı EKLE ama FIELDS'a YAZMA!
-    # meal_type_name = django_filters.CharFilter(field_name="meal_type__name", lookup_expr="iexact")
-
     class Meta:
         model = Recipe
-        fields = ['diet_type', 'season', 'meal_type_fk']  # SADECE MODELDE OLANLAR!
+        fields = ['diet_type', 'season', 'meal_type_fk']
 
 class FilteredRecipeListAPIView(generics.ListAPIView):
     queryset = Recipe.objects.all().order_by('?')
@@ -206,22 +203,28 @@ class RecipeReviewListCreateAPIView(APIView):
     
     def post(self,request,id):
         recipe = get_object_or_404(Recipe, id=id)
+        data = {
+            'comment': request.data.get('comment',''),
+            'rating': request.data.get('rating',None)
+        }
+        serializer = RecipeViewSerializer(data=data, context={"request": request, "recipe": recipe})
+        serializer.is_valid(raise_exception=True)
+        
         review, created = RecipeReview.objects.get_or_create(
             recipe=recipe,
-            user = request.user,
-            defaults={
-                'comment': request.data.get('comment',''),
-                'rating': request.data.get('rating',None),
-            }
+            user=request.user,
+            defaults=data
         )
         
         if not created:
-            review.comment = request.data.get('comment', review.comment)
-            review.rating = request.data.get('rating', review.rating)
+            if "comment" in serializer.validated_data:
+                review.comment = serializer.validated_data["comment"]
+            if "rating" in serializer.validated_data:
+                review.rating = serializer.validated_data["rating"]
             review.save()
-        
-        serializer = RecipeViewSerializer(review)
-        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+            return Response(RecipeViewSerializer(review).data, status=status.HTTP_200_OK)
+        else:
+            return Response(RecipeViewSerializer(review).data, status=status.HTTP_201_CREATED)
     
 class RecipeReviewDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = RecipeReview.objects.all()

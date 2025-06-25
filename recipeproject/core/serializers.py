@@ -25,6 +25,14 @@ class RecipeViewSerializer(serializers.ModelSerializer):
             fields = ('id','recipe','user','comment','rating','created_at')
             read_only_fields = ('id', 'user', 'created_at', 'recipe')
             
+      def validate(self, attrs):
+            comment = attrs.get('comment', '')
+            rating = attrs.get('rating', None)
+            
+            if not comment and rating is None:
+                  raise serializers.ValidationError("rate or comment can't be null")
+            return attrs
+      
       def create(self, validated_data):
             user = self.context['request'].user
             recipe = self.context['recipe']
